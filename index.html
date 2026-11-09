@@ -16,10 +16,10 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
-    // --- SISTEMA DE ÁUDIO E VOZ REAL DOS ANIMAIS ---
-    class SensoryAudio {
+    // --- SÍNTESE ACÚSTICA PARA SONS DE ANIMAIS E EFEITOS ---
+    class OrganicAnimalAudio {
       constructor() {
         this.ctx = null;
         this.isMuted = false;
@@ -64,6 +64,12 @@
         this.playTone(baseFreq, 'sine', 0.15, 0.12);
       }
 
+      playError() {
+        if (this.isMuted) return;
+        this.playTone(180, 'sawtooth', 0.2, 0.15);
+        setTimeout(() => this.playTone(140, 'sawtooth', 0.25, 0.15), 150);
+      }
+
       playSuccess() {
         if (this.isMuted) return;
         const notes = [261.63, 329.63, 392.00, 523.25];
@@ -74,45 +80,234 @@
         });
       }
 
-      // Fala o som real do animal usando síntese de voz nativa pt-BR
-      speakAnimalSound(soundText, animalName) {
+      createNoiseBuffer(duration = 1.0) {
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
+      }
+
+      playOrganicAnimalSound(type) {
         if (this.isMuted) return;
-        
-        // Toca vinheta de efeito sonoro
-        this.playPop(1.4);
+        this.init();
+        const now = this.ctx.currentTime;
 
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel(); // Para qualquer áudio anterior
-          
-          const utterance = new SpeechSynthesisUtterance(`${animalName}! ${soundText}!`);
-          utterance.lang = 'pt-BR';
-          utterance.rate = 0.9;
-          utterance.pitch = 1.1;
+        try {
+          switch (type) {
+            case 'cavalo': {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              const lfo = this.ctx.createOscillator();
+              const lfoGain = this.ctx.createGain();
 
-          window.speechSynthesis.speak(utterance);
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(650, now);
+              osc.frequency.linearRampToValueAtTime(950, now + 0.25);
+              osc.frequency.exponentialRampToValueAtTime(400, now + 0.8);
+
+              lfo.frequency.setValueAtTime(22, now);
+              lfoGain.gain.setValueAtTime(120, now);
+              lfo.connect(osc.frequency);
+
+              gain.gain.setValueAtTime(0, now);
+              gain.gain.linearRampToValueAtTime(0.25, now + 0.1);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+
+              lfo.start(now);
+              osc.start(now);
+              lfo.stop(now + 0.85);
+              osc.stop(now + 0.85);
+              break;
+            }
+            case 'vaca': {
+              const osc = this.ctx.createOscillator();
+              const filter = this.ctx.createBiquadFilter();
+              const gain = this.ctx.createGain();
+
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(115, now);
+              osc.frequency.linearRampToValueAtTime(135, now + 0.3);
+              osc.frequency.linearRampToValueAtTime(95, now + 1.2);
+
+              filter.type = 'lowpass';
+              filter.frequency.setValueAtTime(400, now);
+
+              gain.gain.setValueAtTime(0, now);
+              gain.gain.linearRampToValueAtTime(0.35, now + 0.15);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
+
+              osc.connect(filter);
+              filter.connect(gain);
+              gain.connect(this.ctx.destination);
+
+              osc.start(now);
+              osc.stop(now + 1.25);
+              break;
+            }
+            case 'cachorro': {
+              [0, 0.22].forEach((delay) => {
+                const startTime = now + delay;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(260, startTime);
+                osc.frequency.exponentialRampToValueAtTime(130, startTime + 0.14);
+
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(startTime);
+                osc.stop(startTime + 0.15);
+              });
+              break;
+            }
+            case 'gato': {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(520, now);
+              osc.frequency.linearRampToValueAtTime(720, now + 0.25);
+              osc.frequency.exponentialRampToValueAtTime(380, now + 0.6);
+
+              gain.gain.setValueAtTime(0, now);
+              gain.gain.linearRampToValueAtTime(0.2, now + 0.08);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+
+              osc.start(now);
+              osc.stop(now + 0.65);
+              break;
+            }
+            default:
+              this.playPop();
+          }
+        } catch (e) {
+          console.error("Erro no som", e);
         }
       }
     }
 
-    const audioSystem = new SensoryAudio();
+    const audioSystem = new OrganicAnimalAudio();
 
-    // --- LISTA DE ANIMAIS COM SOM E FRASE REAL ---
-    const animalSoundsList = [
-      { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Riiiii-hóóó!' },
-      { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Muuu-muuu!' },
-      { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Au Au Au!' },
-      { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miau-miau!' },
-      { id: 'leao', name: 'Leão', emoji: '🦁', soundText: 'Rrrrroaaarrr!' },
-      { id: 'elefante', name: 'Elefante', emoji: '🐘', soundText: 'Fuuu-uuhhh!' },
-      { id: 'galo', name: 'Galo', emoji: '🐓', soundText: 'Coo-coo-ri-cooo!' },
-      { id: 'ovelha', name: 'Ovelha', emoji: '🐑', soundText: 'Meee-meee!' },
-      { id: 'pato', name: 'Pato', emoji: '🦆', soundText: 'Quack Quack!' },
-      { id: 'porco', name: 'Porco', emoji: '🐷', soundText: 'Oinc Oinc!' },
-      { id: 'macaco', name: 'Macaco', emoji: '🐵', soundText: 'Uh-uh-ah-ah!' },
-      { id: 'coruja', name: 'Coruja', emoji: '🦉', soundText: 'Uuu-uuu!' }
+    // --- BANCO DE DADOS PARA COMPLETE A FRASE ---
+    const fillSentenceData = [
+      {
+        id: 1,
+        sentencePrefix: "Eu gosto de comer ",
+        sentenceSuffix: " no almoço.",
+        options: [
+          { text: "Maçã", icon: "🍎", isCorrect: true },
+          { text: "Tênis", icon: "👟", isCorrect: false },
+          { text: "Carro", icon: "🚗", isCorrect: false }
+        ]
+      },
+      {
+        id: 2,
+        sentencePrefix: "O ",
+        sentenceSuffix: " faz au au no quintal.",
+        options: [
+          { text: "Flor", icon: "🌸", isCorrect: false },
+          { text: "Cachorro", icon: "🐶", isCorrect: true },
+          { text: "Avião", icon: "✈️", isCorrect: false }
+        ]
+      },
+      {
+        id: 3,
+        sentencePrefix: "Antes de dormir, eu vou ",
+        sentenceSuffix: " meus dentes.",
+        options: [
+          { text: "Escovar", icon: "🪥", isCorrect: true },
+          { text: "Correr", icon: "🏃", isCorrect: false },
+          { text: "Desenhar", icon: "🎨", isCorrect: false }
+        ]
+      },
+      {
+        id: 4,
+        sentencePrefix: "Quando está sol, a ",
+        sentenceSuffix: " cresce no jardim.",
+        options: [
+          { text: "Bola", icon: "⚽", isCorrect: false },
+          { text: "Flor", icon: "🌼", isCorrect: true },
+          { text: "Mochila", icon: "🎒", isCorrect: false }
+        ]
+      }
     ];
 
-    // --- BANCO DE DESENHOS PARA O LIGUE OS PONTOS ---
+    // --- BANCO DE DADOS PARA COMO PEDIR AJUDA ---
+    const helpTasksData = [
+      {
+        id: 'shoes',
+        title: 'Amarrar o Tênis',
+        icon: '👟',
+        prompt: 'Quando você não consegue amarrar os cadarços, o que pode fazer?',
+        options: [
+          { text: '"Pode me ajudar a amarrar o tênis, por favor?"', icon: '💬', isHelpful: true, tip: 'Excelente! Pedir com gentileza ajuda o adulto a entender você.' },
+          { text: 'Ficar bravo e jogar o tênis no chão', icon: '😠', isHelpful: false, tip: 'Respire fundo! Tente usar as palavras para pedir ajuda.' }
+        ]
+      },
+      {
+        id: 'teeth',
+        title: 'Escovar os Dentes',
+        icon: '🪥',
+        prompt: 'Se a pasta de dentes está no alto e você não alcança:',
+        options: [
+          { text: '"Pode pegar a pasta de dentes para mim?"', icon: '🙋‍♂️', isHelpful: true, tip: 'Muito bem! Apontar ou pedir gentilmente funciona super bem!' },
+          { text: 'Tentar subir em um lugar perigoso sozinho', icon: '⚠️', isHelpful: false, tip: 'Cuidado! Sempre peça para um adulto alcançar objetos altos.' }
+        ]
+      },
+      {
+        id: 'food',
+        title: 'Quer Comer Algo',
+        icon: '🍎',
+        prompt: 'Quando estiver com fome e quiser um lanche gostoso:',
+        options: [
+          { text: '"Estou com fome, podemos fazer um lanche?"', icon: '🍽️', isHelpful: true, tip: 'Perfeito! Mostrar a figura do lanche ou falar ajuda bastante.' },
+          { text: 'Chorar sem explicar o que quer', icon: '😢', isHelpful: false, tip: 'Se você mostrar o cartão da comida, as pessoas vão entender rapidinho!' }
+        ]
+      },
+      {
+        id: 'clothes',
+        title: 'Vestir a Roupa',
+        icon: '👕',
+        prompt: 'Se a blusa ficou presa na cabeça ao se vestir:',
+        options: [
+          { text: '"Ajuda a colocar a blusa?"', icon: '🤲', isHelpful: true, tip: 'Boa! Estender os braços e pedir ajuda facilita tudo!' },
+          { text: 'Puxar com força e rasgar a roupa', icon: '⚡', isHelpful: false, tip: 'Calma! Peça ajuda para puxar a blusa devagar.' }
+        ]
+      },
+      {
+        id: 'out',
+        title: 'Sair para Passear',
+        icon: '🌳',
+        prompt: 'Quando quiser ir ao parque ou passear na rua:',
+        options: [
+          { text: '"Podemos ir ao parque hoje?"', icon: '🛝', isHelpful: true, tip: 'Ótimo! Pegar no sapato ou mostrar o parque ajuda a combinar a saída.' },
+          { text: 'Abrir a porta e sair correndo sozinho', icon: '🚫', isHelpful: false, tip: 'Segurança em primeiro lugar! Sempre dê a mão para um adulto ao sair.' }
+        ]
+      }
+    ];
+
+    const animalSoundsList = [
+      { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Relincho' },
+      { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Mugido' },
+      { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Latido' },
+      { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miado' }
+    ];
+
     const dotToDotData = {
       'Carros & Motos': [
         {
@@ -122,109 +317,10 @@
           color: '#EF4444',
           svgPath: "M 40,160 L 70,160 L 90,110 L 170,80 L 250,80 L 300,110 L 350,160 L 370,160 L 370,200 L 350,210 L 320,210 L 300,190 L 260,190 L 240,210 L 130,210 L 110,190 L 70,190 L 50,210 L 40,200 Z",
           dots: [
-            { id: 1, x: 40, y: 160 },
-            { id: 2, x: 70, y: 160 },
-            { id: 3, x: 90, y: 110 },
-            { id: 4, x: 170, y: 80 },
-            { id: 5, x: 250, y: 80 },
-            { id: 6, x: 300, y: 110 },
-            { id: 7, x: 350, y: 160 },
-            { id: 8, x: 370, y: 160 },
-            { id: 9, x: 370, y: 200 },
-            { id: 10, x: 350, y: 210 },
-            { id: 11, x: 250, y: 210 },
-            { id: 12, x: 130, y: 210 },
-            { id: 13, x: 40, y: 200 }
-          ]
-        },
-        {
-          id: 'moto',
-          name: 'Motocicleta',
-          emoji: '🏍️',
-          color: '#3B82F6',
-          svgPath: "M 60,170 L 100,100 L 140,100 L 180,130 L 250,130 L 310,170 L 340,170 L 340,210 L 280,210 L 220,180 L 140,180 L 80,210 Z",
-          dots: [
-            { id: 1, x: 60, y: 170 },
-            { id: 2, x: 100, y: 100 },
-            { id: 3, x: 140, y: 100 },
-            { id: 4, x: 180, y: 130 },
-            { id: 5, x: 250, y: 130 },
-            { id: 6, x: 310, y: 170 },
-            { id: 7, x: 340, y: 170 },
-            { id: 8, x: 340, y: 210 },
-            { id: 9, x: 280, y: 210 },
-            { id: 10, x: 220, y: 180 },
-            { id: 11, x: 140, y: 180 },
-            { id: 12, x: 80, y: 210 }
-          ]
-        }
-      ],
-      'Animais': [
-        {
-          id: 'dog',
-          name: 'Cachorrinho',
-          emoji: '🐶',
-          color: '#F59E0B',
-          svgPath: "M 130,230 L 110,160 L 80,120 L 130,90 L 180,110 L 230,90 L 280,120 L 250,160 L 230,230 L 180,260 Z",
-          dots: [
-            { id: 1, x: 130, y: 230 },
-            { id: 2, x: 110, y: 160 },
-            { id: 3, x: 80, y: 120 },
-            { id: 4, x: 130, y: 90 },
-            { id: 5, x: 180, y: 110 },
-            { id: 6, x: 230, y: 90 },
-            { id: 7, x: 280, y: 120 },
-            { id: 8, x: 250, y: 160 },
-            { id: 9, x: 230, y: 230 },
-            { id: 10, x: 180, y: 260 }
-          ]
-        }
-      ],
-      'Flores': [
-        {
-          id: 'flower',
-          name: 'Flor do Campo',
-          emoji: '🌼',
-          color: '#EC4899',
-          svgPath: "M 200,60 L 230,110 L 280,90 L 260,140 L 310,160 L 260,180 L 280,230 L 230,210 L 200,260 L 170,210 L 120,230 L 140,180 L 90,160 L 140,140 L 120,90 L 170,110 Z",
-          dots: [
-            { id: 1, x: 200, y: 60 },
-            { id: 2, x: 230, y: 110 },
-            { id: 3, x: 280, y: 90 },
-            { id: 4, x: 260, y: 140 },
-            { id: 5, x: 310, y: 160 },
-            { id: 6, x: 260, y: 180 },
-            { id: 7, x: 280, y: 230 },
-            { id: 8, x: 230, y: 210 },
-            { id: 9, x: 200, y: 260 },
-            { id: 10, x: 170, y: 210 },
-            { id: 11, x: 120, y: 230 },
-            { id: 12, x: 140, y: 180 },
-            { id: 13, x: 90, y: 160 },
-            { id: 14, x: 140, y: 140 },
-            { id: 15, x: 120, y: 90 },
-            { id: 16, x: 170, y: 110 }
-          ]
-        }
-      ],
-      'Frutas & Legumes': [
-        {
-          id: 'apple',
-          name: 'Maçã',
-          emoji: '🍎',
-          color: '#EF4444',
-          svgPath: "M 200,90 L 240,75 L 285,110 L 290,170 L 260,235 L 200,270 L 140,235 L 110,170 L 115,110 L 160,75 Z",
-          dots: [
-            { id: 1, x: 200, y: 90 },
-            { id: 2, x: 240, y: 75 },
-            { id: 3, x: 285, y: 110 },
-            { id: 4, x: 290, y: 170 },
-            { id: 5, x: 260, y: 235 },
-            { id: 6, x: 200, y: 280 },
-            { id: 7, x: 140, y: 235 },
-            { id: 8, x: 110, y: 170 },
-            { id: 9, x: 115, y: 110 },
-            { id: 10, x: 160, y: 75 }
+            { id: 1, x: 40, y: 160 }, { id: 2, x: 70, y: 160 }, { id: 3, x: 90, y: 110 },
+            { id: 4, x: 170, y: 80 }, { id: 5, x: 250, y: 80 }, { id: 6, x: 300, y: 110 },
+            { id: 7, x: 350, y: 160 }, { id: 8, x: 370, y: 160 }, { id: 9, x: 370, y: 200 },
+            { id: 10, x: 350, y: 210 }, { id: 11, x: 250, y: 210 }, { id: 12, x: 130, y: 210 }, { id: 13, x: 40, y: 200 }
           ]
         }
       ]
@@ -234,13 +330,7 @@
       { id: 'cavalo', name: 'Cavalo', icon: '🐴', color: 'bg-amber-100 border-amber-300' },
       { id: 'carro', name: 'Carro', icon: '🚗', color: 'bg-red-100 border-red-300' },
       { id: 'flor', name: 'Flor', icon: '🌸', color: 'bg-pink-100 border-pink-300' },
-      { id: 'gato', name: 'Gato', icon: '🐱', color: 'bg-orange-100 border-orange-300' },
-      { id: 'maca', name: 'Maçã', icon: '🍎', color: 'bg-rose-100 border-rose-300' },
-      { id: 'estrela', name: 'Estrela', icon: '⭐', color: 'bg-yellow-100 border-yellow-300' },
-      { id: 'sol', name: 'Sol', icon: '☀️', color: 'bg-amber-200 border-amber-400' },
-      { id: 'aviao', name: 'Avião', icon: '✈️', color: 'bg-sky-100 border-sky-300' },
-      { id: 'sorvete', name: 'Sorvete', icon: '🍦', color: 'bg-purple-100 border-purple-300' },
-      { id: 'bola', name: 'Bola', icon: '⚽', color: 'bg-emerald-100 border-emerald-300' }
+      { id: 'gato', name: 'Gato', icon: '🐱', color: 'bg-orange-100 border-orange-300' }
     ];
 
     const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -252,7 +342,113 @@
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
 
-      // Bolhas
+      // --- ESTADOS DO JOGO COMPLETE A FRASE ---
+      const [sentenceIndex, setSentenceIndex] = useState(0);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [sentenceFeedback, setSentenceFeedback] = useState(null);
+
+      const currentSentence = fillSentenceData[sentenceIndex];
+
+      const handleSelectOption = (option) => {
+        setSelectedOption(option);
+        if (option.isCorrect) {
+          setSentenceFeedback('success');
+          audioSystem.playSuccess();
+        } else {
+          setSentenceFeedback('error');
+          audioSystem.playError();
+        }
+      };
+
+      const nextSentence = () => {
+        setSelectedOption(null);
+        setSentenceFeedback(null);
+        setSentenceIndex((prev) => (prev + 1) % fillSentenceData.length);
+      };
+
+      // --- ESTADOS DO JOGO COMO PEDIR AJUDA ---
+      const [taskIndex, setTaskIndex] = useState(0);
+      const [helpFeedback, setHelpFeedback] = useState(null);
+
+      const currentHelpTask = helpTasksData[taskIndex];
+
+      const handleHelpOptionClick = (option) => {
+        if (option.isHelpful) {
+          setHelpFeedback({ type: 'success', tip: option.tip });
+          audioSystem.playSuccess();
+        } else {
+          setHelpFeedback({ type: 'error', tip: option.tip });
+          audioSystem.playError();
+        }
+      };
+
+      const nextHelpTask = () => {
+        setHelpFeedback(null);
+        setTaskIndex((prev) => (prev + 1) % helpTasksData.length);
+      };
+
+      // --- ESTADOS DA LOUSA MÁGICA (DESENHO LIVRE) ---
+      const canvasRef = useRef(null);
+      const [isDrawing, setIsDrawing] = useState(false);
+      const [brushColor, setBrushColor] = useState('#4F46E5');
+      const [brushSize, setBrushSize] = useState(6);
+      const [isEraser, setIsEraser] = useState(false);
+
+      useEffect(() => {
+        if (activeModule === 'drawing-board' && canvasRef.current) {
+          const canvas = canvasRef.current;
+          canvas.width = canvas.parentElement.clientWidth;
+          canvas.height = 380;
+          const ctx = canvas.getContext('2d');
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }, [activeModule]);
+
+      const startDrawing = (e) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const ctx = canvas.getContext('2d');
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        ctx.beginPath();
+        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+        setIsDrawing(true);
+      };
+
+      const draw = (e) => {
+        if (!isDrawing) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const ctx = canvas.getContext('2d');
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        ctx.strokeStyle = isEraser ? '#FFFFFF' : brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        ctx.stroke();
+      };
+
+      const stopDrawing = () => {
+        setIsDrawing(false);
+      };
+
+      const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        audioSystem.playPop(1.3);
+      };
+
+      // --- DEMAIS MÓDULOS ---
       const [bubbles, setBubbles] = useState([]);
       useEffect(() => {
         const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
@@ -264,200 +460,6 @@
         }));
         setBubbles(initialBubbles);
       }, []);
-
-      // Sentimentos
-      const emotionsData = [
-        { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
-        { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
-        { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
-        { id: 'angry', emoji: '😡', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' }
-      ];
-      const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
-
-      // Rotina
-      const initialRoutines = [
-        { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅' },
-        { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥' },
-        { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿' },
-        { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣' },
-        { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊' },
-        { id: 6, title: 'Ir para a Escola / Creche / Faculdade', time: 'Manhã', icon: '🎒' },
-        { id: 7, title: 'Almoçar', time: 'Tarde', icon: '🍽️' },
-        { id: 8, title: 'Brincar / Momento Livre', time: 'Tarde', icon: '🎨' },
-        { id: 9, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚' },
-        { id: 10, title: 'Jantar', time: 'Noite', icon: '🍲' },
-        { id: 11, title: 'Guardar Brinquedos', time: 'Noite', icon: '🧸' },
-        { id: 12, title: 'Hora de Dormir', time: 'Noite', icon: '🌙' }
-      ];
-
-      const [currentDay, setCurrentDay] = useState('Segunda');
-      const [routineTab, setRoutineTab] = useState('today');
-      const [weeklyRoutines, setWeeklyRoutines] = useState(() => {
-        const initialMap = {};
-        weekDays.forEach(day => {
-          initialMap[day] = initialRoutines.map(r => ({ ...r, completed: false }));
-        });
-        return initialMap;
-      });
-
-      const completeRoutine = (id) => {
-        setWeeklyRoutines(prev => ({
-          ...prev,
-          [currentDay]: prev[currentDay].map(r => r.id === id ? { ...r, completed: !r.completed } : r)
-        }));
-        audioSystem.playSuccess();
-      };
-
-      // Ligue os pontos
-      const [dotCategory, setDotCategory] = useState('Carros & Motos');
-      const [selectedDrawingIndex, setSelectedDrawingIndex] = useState(0);
-      const [nextDot, setNextDot] = useState(1);
-      const [connectedDots, setConnectedDots] = useState([]);
-      const [isDrawingCompleted, setIsDrawingCompleted] = useState(false);
-
-      const currentDrawing = dotToDotData[dotCategory][selectedDrawingIndex] || dotToDotData['Carros & Motos'][0];
-
-      const handleDotClick = (dotId) => {
-        if (dotId === nextDot) {
-          audioSystem.playPop(1 + dotId * 0.1);
-          setConnectedDots(prev => [...prev, dotId]);
-          if (dotId === currentDrawing.dots.length) {
-            setIsDrawingCompleted(true);
-            audioSystem.playSuccess();
-          } else {
-            setNextDot(prev => prev + 1);
-          }
-        }
-      };
-
-      const resetDotGame = () => {
-        setNextDot(1);
-        setConnectedDots([]);
-        setIsDrawingCompleted(false);
-      };
-
-      // Quebra-cabeça
-      const [puzzleSize, setPuzzleSize] = useState(3);
-      const [puzzleImage, setPuzzleImage] = useState('🚗');
-      const [puzzlePieces, setPuzzlePieces] = useState([]);
-      const [selectedPieceIndex, setSelectedPieceIndex] = useState(null);
-      const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
-
-      const initPuzzle = () => {
-        const total = puzzleSize * puzzleSize;
-        let arr = Array.from({ length: total }, (_, i) => i);
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        setPuzzlePieces(arr);
-        setSelectedPieceIndex(null);
-        setIsPuzzleSolved(false);
-      };
-
-      useEffect(() => {
-        initPuzzle();
-      }, [puzzleSize, puzzleImage]);
-
-      const handlePieceClick = (index) => {
-        if (isPuzzleSolved) return;
-        audioSystem.playPop(1.1);
-        if (selectedPieceIndex === null) {
-          setSelectedPieceIndex(index);
-        } else {
-          const newPieces = [...puzzlePieces];
-          const temp = newPieces[selectedPieceIndex];
-          newPieces[selectedPieceIndex] = newPieces[index];
-          newPieces[index] = temp;
-          setPuzzlePieces(newPieces);
-          setSelectedPieceIndex(null);
-
-          const solved = newPieces.every((val, idx) => val === idx);
-          if (solved) {
-            setIsPuzzleSolved(true);
-            audioSystem.playSuccess();
-          }
-        }
-      };
-
-      // Memória
-      const [memoryCards, setMemoryCards] = useState([]);
-      const [flippedCards, setFlippedCards] = useState([]);
-      const [matchedCards, setMatchedCards] = useState([]);
-      const [memoryMoves, setMemoryMoves] = useState(0);
-
-      const initMemoryGame = () => {
-        const shuffledPool = [...memoryPool].sort(() => 0.5 - Math.random()).slice(0, 8);
-        const duplicated = [];
-        shuffledPool.forEach((item, index) => {
-          duplicated.push({ ...item, uniqueId: index * 2 });
-          duplicated.push({ ...item, uniqueId: index * 2 + 1 });
-        });
-        const finalShuffled = duplicated.sort(() => 0.5 - Math.random());
-        setMemoryCards(finalShuffled);
-        setFlippedCards([]);
-        setMatchedCards([]);
-        setMemoryMoves(0);
-      };
-
-      useEffect(() => {
-        initMemoryGame();
-      }, []);
-
-      const handleMemoryCardClick = (index) => {
-        if (flippedCards.length === 2 || flippedCards.includes(index) || matchedCards.includes(index)) return;
-
-        audioSystem.playPop(1.2);
-        const newFlipped = [...flippedCards, index];
-        setFlippedCards(newFlipped);
-
-        if (newFlipped.length === 2) {
-          setMemoryMoves(m => m + 1);
-          const firstCard = memoryCards[newFlipped[0]];
-          const secondCard = memoryCards[newFlipped[1]];
-
-          if (firstCard.id === secondCard.id) {
-            setMatchedCards(prev => [...prev, newFlipped[0], newFlipped[1]]);
-            setFlippedCards([]);
-            audioSystem.playSuccess();
-          } else {
-            setTimeout(() => {
-              setFlippedCards([]);
-            }, 1000);
-          }
-        }
-      };
-
-      // Sons dos Animais
-      const [activeAnimalSound, setActiveAnimalSound] = useState(null);
-
-      const triggerAnimalSound = (animal) => {
-        setActiveAnimalSound(animal);
-        audioSystem.speakAnimalSound(animal.soundText, animal.name);
-        setTimeout(() => setActiveAnimalSound(null), 1800);
-      };
-
-      useEffect(() => {
-        audioSystem.isMuted = isMuted;
-      }, [isMuted]);
-
-      const createBubble = (x, y) => {
-        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        const newBubble = {
-          id: Date.now() + Math.random(),
-          x: x || Math.random() * 80 + 10,
-          y: y || Math.random() * 70 + 15,
-          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
-          color: randomColor
-        };
-        setBubbles(prev => [...prev.slice(-18), newBubble]);
-      };
-
-      const handleBubbleClick = (id) => {
-        audioSystem.playPop(0.8 + Math.random() * 0.5);
-        setBubbles(prev => prev.filter(b => b.id !== id));
-      };
 
       const getThemeClass = () => {
         if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
@@ -512,546 +514,25 @@
             </header>
 
             <main className="max-w-6xl mx-auto">
+              {/* HOMEPAGE */}
               {activeModule === 'home' && (
                 <div className="space-y-8">
                   <div 
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
-                    }}
-                    className={`relative overflow-hidden min-h-[200px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
+                    className={`relative overflow-hidden min-h-[180px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
                   >
-                    {bubbles.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBubbleClick(b.id);
-                        }}
-                        style={{
-                          left: `${b.x}%`,
-                          top: `${b.y}%`,
-                          width: `${b.size}px`,
-                          height: `${b.size}px`,
-                          backgroundColor: b.color
-                        }}
-                        className="absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform animate-bounce"
-                      />
-                    ))}
                     <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
                       Mundo Pop! & Ploft!
                     </h1>
                     <p className="text-center font-medium opacity-80 z-10">
-                      Escolha uma atividade interativa e divirta-se! 🫧
+                      Escolha uma atividade interativa para jogar e aprender! 🫧
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <button 
-                      onClick={() => setActiveModule('dot-to-dot')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-indigo-400`}
+                      onClick={() => setActiveModule('fill-sentence')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-violet-400`}
                     >
-                      <div className="text-4xl mb-3">✏️</div>
-                      <h2 className="text-xl font-bold mb-1">1. Ligue os Pontos</h2>
-                      <p className="text-sm opacity-75">Carros, motos, animais, flores e frutas com traços realistas!</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('puzzle')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-blue-400`}
-                    >
-                      <div className="text-4xl mb-3">🧩</div>
-                      <h2 className="text-xl font-bold mb-1">2. Quebra-Cabeça</h2>
-                      <p className="text-sm opacity-75">Monte imagens interativas ajustando a dificuldade.</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('memory')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-amber-400`}
-                    >
-                      <div className="text-4xl mb-3">🎴</div>
-                      <h2 className="text-xl font-bold mb-1">3. Jogo da Memória</h2>
-                      <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos variados!</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('animal-sounds')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
-                    >
-                      <div className="text-4xl mb-3">🔊</div>
-                      <h2 className="text-xl font-bold mb-1">4. Sons dos Animais</h2>
-                      <p className="text-sm opacity-75">Clique para ouvir a voz real e o som característico dos animais!</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('routines')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
-                    >
-                      <div className="text-4xl mb-3">📅</div>
-                      <h2 className="text-xl font-bold mb-1">Minha Rotina Semanal</h2>
-                      <p className="text-sm opacity-75">Acompanhamento diário de Segunda a Domingo com Histórico completo.</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('emotions')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
-                    >
-                      <div className="text-4xl mb-3">😊</div>
-                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
-                      <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo.</p>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 4. SOM DOS ANIMAIS (REFEITO COM ÁUDIO REAL) */}
-              {activeModule === 'animal-sounds' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div>
-                    <h2 className="text-2xl font-bold">🔊 Sons dos Animais em Voz Alta</h2>
-                    <p className="text-sm opacity-75">Clique em qualquer animal abaixo para ouvir o som que ele faz com narração em português!</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {animalSoundsList.map((animal) => {
-                      const isActive = activeAnimalSound?.id === animal.id;
-
-                      return (
-                        <button
-                          key={animal.id}
-                          onClick={() => triggerAnimalSound(animal)}
-                          className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center gap-2 select-none ${
-                            isActive 
-                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-xl ring-4 ring-emerald-300' 
-                              : 'border-slate-100 bg-white hover:border-emerald-200 hover:scale-102 shadow-sm'
-                          }`}
-                        >
-                          <div className={`text-6xl transition-transform ${isActive ? 'animate-bounce scale-110' : ''}`}>
-                            {animal.emoji}
-                          </div>
-                          <div className="font-bold text-lg text-slate-800">{animal.name}</div>
-                          <div className={`text-xs font-black px-3 py-1 rounded-full transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                            {animal.soundText}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* OUTROS MÓDULOS */}
-              {activeModule === 'dot-to-dot' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">✏️ Jogo de Ligação de Pontos</h2>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {Object.keys(dotToDotData).map(cat => (
-                        <button
-                          key={cat}
-                          onClick={() => {
-                            setDotCategory(cat);
-                            setSelectedDrawingIndex(0);
-                            resetDotGame();
-                          }}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${dotCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl">
-                    <div className="font-bold text-indigo-900">
-                      Desenho: {currentDrawing.emoji} {currentDrawing.name}
-                    </div>
-                    <button 
-                      onClick={resetDotGame}
-                      className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition"
-                    >
-                      🔄 Reiniciar
-                    </button>
-                  </div>
-
-                  <div className="relative w-full h-[360px] border-4 border-dashed border-indigo-200 rounded-3xl bg-slate-50 flex items-center justify-center overflow-hidden">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 300">
-                      <path 
-                        d={currentDrawing.svgPath} 
-                        fill={isDrawingCompleted ? currentDrawing.color : 'rgba(238, 242, 255, 0.5)'} 
-                        stroke={isDrawingCompleted ? currentDrawing.color : '#cbd5e1'} 
-                        strokeWidth={isDrawingCompleted ? "6" : "2"}
-                        strokeDasharray={isDrawingCompleted ? "none" : "6,6"}
-                        className="transition-all duration-500"
-                      />
-
-                      {connectedDots.map((dotId, index) => {
-                        if (index === 0) return null;
-                        const prevDotObj = currentDrawing.dots.find(d => d.id === connectedDots[index - 1]);
-                        const currentDotObj = currentDrawing.dots.find(d => d.id === dotId);
-                        return (
-                          <line
-                            key={index}
-                            x1={prevDotObj.x}
-                            y1={prevDotObj.y}
-                            x2={currentDotObj.x}
-                            y2={currentDotObj.y}
-                            stroke="#4F46E5"
-                            strokeWidth="5"
-                            strokeLinecap="round"
-                          />
-                        );
-                      })}
-                    </svg>
-
-                    {currentDrawing.dots.map((dot) => {
-                      const isConnected = connectedDots.includes(dot.id);
-                      const isNext = dot.id === nextDot;
-
-                      return (
-                        <button
-                          key={dot.id}
-                          onClick={() => handleDotClick(dot.id)}
-                          style={{ left: `${(dot.x / 400) * 100}%`, top: `${(dot.y / 300) * 100}%` }}
-                          className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full font-black text-sm flex items-center justify-center shadow-md transition-transform ${
-                            isConnected 
-                              ? 'bg-emerald-500 text-white scale-90' 
-                              : isNext 
-                              ? 'bg-indigo-600 text-white scale-125 animate-pulse ring-4 ring-indigo-300' 
-                              : 'bg-white text-slate-700 border-2 border-indigo-400'
-                          }`}
-                        >
-                          {dot.id}
-                        </button>
-                      );
-                    })}
-
-                    {isDrawingCompleted && (
-                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center">
-                        <div className="bg-white p-6 rounded-3xl shadow-2xl text-center space-y-2 border-4 border-emerald-400">
-                          <div className="text-6xl animate-bounce">{currentDrawing.emoji}</div>
-                          <h3 className="text-2xl font-black text-emerald-800">Parabéns! Desenho Concluído!</h3>
-                          <p className="font-bold text-slate-600">{currentDrawing.name}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'puzzle' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">🧩 Jogo de Quebra-Cabeça</h2>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="flex gap-2">
-                        {['🚗', '🐶', '🌸', '🍎', '⭐'].map(img => (
-                          <button
-                            key={img}
-                            onClick={() => setPuzzleImage(img)}
-                            className={`p-2 rounded-xl text-xl transition ${puzzleImage === img ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}
-                          >
-                            {img}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="flex gap-1 border p-1 rounded-xl">
-                        {[3, 4].map(sz => (
-                          <button
-                            key={sz}
-                            onClick={() => setPuzzleSize(sz)}
-                            className={`px-3 py-1 rounded-lg font-bold text-sm ${puzzleSize === sz ? 'bg-indigo-600 text-white' : 'text-slate-600'}`}
-                          >
-                            {sz}x{sz}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-blue-50 p-4 rounded-2xl">
-                    <p className="text-sm font-bold text-blue-900">Clique em duas peças para trocá-las de lugar!</p>
-                    <button 
-                      onClick={initPuzzle}
-                      className="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition"
-                    >
-                      🔄 Embaralhar
-                    </button>
-                  </div>
-
-                  <div 
-                    className="grid gap-2 max-w-md mx-auto aspect-square bg-slate-200 p-3 rounded-3xl shadow-inner"
-                    style={{ gridTemplateColumns: `repeat(${puzzleSize}, minmax(0, 1fr))` }}
-                  >
-                    {puzzlePieces.map((pieceVal, index) => {
-                      const isCorrect = pieceVal === index;
-                      const isSelected = selectedPieceIndex === index;
-
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handlePieceClick(index)}
-                          className={`relative rounded-2xl text-4xl md:text-5xl flex items-center justify-center font-bold transition-all border-4 shadow-sm select-none ${
-                            isSelected 
-                              ? 'border-yellow-400 bg-yellow-100 scale-95 ring-4 ring-yellow-300' 
-                              : isCorrect 
-                              ? 'border-emerald-400 bg-emerald-50' 
-                              : 'border-white bg-white hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="opacity-95">{puzzleImage}</span>
-                          <span className="absolute bottom-1 right-2 text-xs font-black opacity-30 text-slate-800">
-                            {pieceVal + 1}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {isPuzzleSolved && (
-                    <div className="p-4 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center">
-                      <h3 className="text-xl font-black text-emerald-900">🎉 Excelente! Você completou o Quebra-Cabeça!</h3>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeModule === 'memory' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-2xl font-bold">🎴 Jogo da Memória Variado</h2>
-                      <p className="text-sm opacity-75">Encontre os pares correspondentes entre figuras variadas.</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold text-sm bg-amber-100 text-amber-900 px-3 py-1.5 rounded-xl">
-                        Jogadas: {memoryMoves}
-                      </span>
-                      <button 
-                        onClick={initMemoryGame}
-                        className="px-4 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition"
-                      >
-                        🔄 Novo Jogo
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-3 max-w-2xl mx-auto">
-                    {memoryCards.map((card, index) => {
-                      const isFlipped = flippedCards.includes(index) || matchedCards.includes(index);
-                      const isMatched = matchedCards.includes(index);
-
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleMemoryCardClick(index)}
-                          className={`h-24 md:h-28 rounded-2xl text-3xl md:text-4xl flex flex-col items-center justify-center font-bold transition-all border-4 shadow-md ${
-                            isFlipped 
-                              ? `${card.color} rotate-0` 
-                              : 'bg-indigo-600 border-indigo-400 text-white hover:bg-indigo-700'
-                          } ${isMatched ? 'opacity-60 border-emerald-400' : ''}`}
-                        >
-                          {isFlipped ? (
-                            <>
-                              <span>{card.icon}</span>
-                              <span className="text-xs font-bold mt-1 text-slate-700">{card.name}</span>
-                            </>
-                          ) : (
-                            <span className="text-2xl">❓</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {matchedCards.length === memoryCards.length && memoryCards.length > 0 && (
-                    <div className="p-4 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center">
-                      <h3 className="text-xl font-black text-emerald-900">🏆 Incrível! Você encontrou todos os pares em {memoryMoves} jogadas!</h3>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeModule === 'routines' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">📅 Minha Rotina Semanal</h2>
-
-                    <div className="flex gap-2 border p-1 rounded-2xl bg-slate-100">
-                      <button
-                        onClick={() => setRoutineTab('today')}
-                        className={`px-4 py-2 rounded-xl font-bold text-sm transition ${routineTab === 'today' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}
-                      >
-                        📅 Tarefas do Dia
-                      </button>
-                      <button
-                        onClick={() => setRoutineTab('history')}
-                        className={`px-4 py-2 rounded-xl font-bold text-sm transition ${routineTab === 'history' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}
-                      >
-                        📊 Histórico Semanal
-                      </button>
-                    </div>
-                  </div>
-
-                  {routineTab === 'today' ? (
-                    <div className="space-y-6">
-                      <div className="flex flex-wrap gap-2 justify-center bg-indigo-50/60 p-3 rounded-2xl">
-                        {weekDays.map(day => (
-                          <button
-                            key={day}
-                            onClick={() => setCurrentDay(day)}
-                            className={`px-3 py-2 rounded-xl font-bold text-sm transition ${currentDay === day ? 'bg-indigo-600 text-white shadow-md scale-105' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
-                          >
-                            {day}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {weeklyRoutines[currentDay].map(r => (
-                          <div 
-                            key={r.id}
-                            onClick={() => completeRoutine(r.id)}
-                            className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-70' : 'bg-white border-slate-200'}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-3xl">{r.icon}</span>
-                              <div>
-                                <p className={`font-bold ${r.completed ? 'line-through text-slate-500' : ''}`}>{r.title}</p>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{r.time}</span>
-                              </div>
-                            </div>
-                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
-                              {r.completed ? '✓' : ''}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold text-slate-700">Acompanhamento dos Dias da Semana:</h3>
-                      <div className="grid grid-cols-1 gap-3">
-                        {weekDays.map(day => {
-                          const dayTasks = weeklyRoutines[day];
-                          const completedCount = dayTasks.filter(t => t.completed).length;
-                          const totalCount = dayTasks.length;
-                          const percent = Math.round((completedCount / totalCount) * 100);
-
-                          return (
-                            <div key={day} className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
-                              <div className="flex justify-between items-center font-bold">
-                                <span className="text-slate-800">{day}</span>
-                                <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                                  {completedCount} de {totalCount} concluídas ({percent}%)
-                                </span>
-                              </div>
-                              <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                                <div 
-                                  className="bg-emerald-500 h-full transition-all duration-500 rounded-full"
-                                  style={{ width: `${percent}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeModule === 'emotions' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <h2 className="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {emotionsData.map(e => (
-                      <button
-                        key={e.id}
-                        onClick={() => {
-                          setSelectedEmotion(e);
-                          audioSystem.playPop(1.2);
-                        }}
-                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
-                      >
-                        <div className="text-5xl mb-2">{e.emoji}</div>
-                        <div className="font-bold">{e.label}</div>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
-                    <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
-                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
-                  </div>
-                </div>
-              )}
-            </main>
-          </div>
-
-          {showParentModal && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
-                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
-                
-                <div>
-                  <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[1, 2, 3].map(lvl => (
-                      <button 
-                        key={lvl}
-                        onClick={() => setSupportLevel(lvl)}
-                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}
-                      >
-                        Nível {lvl}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-1">Tema Visual:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['pastel', 'dark', 'contrast'].map(t => (
-                      <button 
-                        key={t}
-                        onClick={() => setThemeMode(t)}
-                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setShowParentModal(false)}
-                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          )}
-
-          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
-            <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
-          </footer>
-        </div>
-      );
-    }
-
-    const container = document.getElementById('root');
-    const root = ReactDOM.createRoot(container);
-    root.render(<App />);
-
-    const yearEl = document.getElementById("year");
-    if (yearEl) {
-      yearEl.textContent = new Date().getFullYear();
-    }
-  </script>
-</body>
-</html>
+                      <div className="text-4xl mb-3">✍️</div>
+                      <h2 className="text-xl font-bold mb-1">Complete a Frase</h2>
+                      <p className="text-sm opacity-75">Escolha a imagem corre
