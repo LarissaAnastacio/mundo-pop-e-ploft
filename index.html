@@ -15,7 +15,6 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- SISTEMA DE SÍNTESE SONORA SUAVE ---
     class SensoryAudio {
       constructor() {
         this.ctx = null;
@@ -104,35 +103,25 @@
       ];
       const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
 
-      // --- LISTA EXPANDIDA DE ROTINAS ---
       const initialRoutines = [
-        // Manhã & Cuidados Pessoais
         { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅', completed: false },
         { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥', completed: false },
         { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿', completed: false },
         { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣', completed: false },
         { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊', completed: false },
         { id: 6, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼', completed: false },
-
-        // Estudos & Trabalho
         { id: 7, title: 'Ir para a Escola / Creche', time: 'Manhã', icon: '🎒', completed: false },
         { id: 8, title: 'Ir para a Faculdade / Curso', time: 'Tarde', icon: '🎓', completed: false },
         { id: 9, title: 'Trabalhar / Tarefas', time: 'Tarde', icon: '💻', completed: false },
         { id: 10, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚', completed: false },
-
-        // Saúde & Acompanhamento
         { id: 11, title: 'Ir à Terapia / Fono / TO', time: 'Tarde', icon: '🧩', completed: false },
         { id: 12, title: 'Consulta no Médico / Dentista', time: 'Tarde', icon: '🩺', completed: false },
         { id: 13, title: 'Beber Água e Se Hidratar', time: 'Dia', icon: '🥤', completed: false },
         { id: 14, title: 'Fazer Exercício / Alongamento', time: 'Tarde', icon: '🏃', completed: false },
-
-        // Alimentação & Lazer
         { id: 15, title: 'Almoçar', time: 'Tarde', icon: '🍽️', completed: false },
         { id: 16, title: 'Lanche da Tarde', time: 'Tarde', icon: '🍎', completed: false },
         { id: 17, title: 'Conversar com Amigos / Família', time: 'Tarde', icon: '💬', completed: false },
         { id: 18, title: 'Brincar / Jogar / Momento Livre', time: 'Tarde', icon: '🎨', completed: false },
-
-        // Noite & Organização
         { id: 19, title: 'Jantar', time: 'Noite', icon: '🍲', completed: false },
         { id: 20, title: 'Guardar Brinquedos e Fazer a Mochila', time: 'Noite', icon: '🧸', completed: false },
         { id: 21, title: 'Momento de Relaxar / Desconectar', time: 'Noite', icon: '🎧', completed: false },
@@ -177,6 +166,271 @@
         return 'bg-amber-50/60 text-slate-800';
       };
 
+      const getCardStyle = () => {
+        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
+        if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
+        return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
+      };
+
+      return (
+        <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
+          <div>
+            <header className="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveModule('home')} 
+                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
+                >
+                  Mundo Pop! & Ploft!
+                </button>
+                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
+                  Nível {supportLevel}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {activeModule !== 'home' && (
+                  <button 
+                    onClick={() => setActiveModule('home')}
+                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition"
+                  >
+                    🏠 Início
+                  </button>
+                )}
+                <button 
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-3 rounded-xl border font-semibold transition"
+                >
+                  {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
+                </button>
+                <button 
+                  onClick={() => setShowParentModal(true)}
+                  className="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition"
+                >
+                  ⚙️ Ajustes
+                </button>
+              </div>
+            </header>
+
+            <main className="max-w-6xl mx-auto">
+              {activeModule === 'home' && (
+                <div className="space-y-8">
+                  <div 
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
+                    }}
+                    className={`relative overflow-hidden min-h-[220px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
+                  >
+                    {bubbles.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBubbleClick(b.id);
+                        }}
+                        style={{
+                          left: `${b.x}%`,
+                          top: `${b.y}%`,
+                          width: `${b.size}px`,
+                          height: `${b.size}px`,
+                          backgroundColor: b.color
+                        }}
+                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
+                      />
+                    ))}
+                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
+                      Mundo Pop! & Ploft!
+                    </h1>
+                    <p className="text-center font-medium opacity-80 z-10">
+                      Clique em qualquer lugar para criar e estourar bolhas! 🫧
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <button 
+                      onClick={() => setActiveModule('bubbles')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
+                    >
+                      <div className="text-4xl mb-3">🫧</div>
+                      <h2 className="text-xl font-bold mb-1">Bolhas Sensoriais</h2>
+                      <p className="text-sm opacity-75">Toque livre sem tempo ou regras. Estouro calmo e relaxante.</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('emotions')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
+                    >
+                      <div className="text-4xl mb-3">😊</div>
+                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
+                      <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo agora.</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('routines')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
+                    >
+                      <div className="text-4xl mb-3">📅</div>
+                      <h2 className="text-xl font-bold mb-1">Minha Rotina Completa</h2>
+                      <p className="text-sm opacity-75">Escola, faculdade, trabalho, médico, terapia, lazer e muito mais!</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'bubbles' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl min-h-[400px] relative`}>
+                  <h2 className="text-2xl font-bold mb-4">🫧 Estourar Bolhas Calmas</h2>
+                  <div 
+                    className="w-full h-80 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-sky-50/30 cursor-pointer"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
+                    }}
+                  >
+                    {bubbles.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBubbleClick(b.id);
+                        }}
+                        style={{
+                          left: `${b.x}%`,
+                          top: `${b.y}%`,
+                          width: `${b.size}px`,
+                          height: `${b.size}px`,
+                          backgroundColor: b.color
+                        }}
+                        className="absolute rounded-full shadow-md border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'emotions' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <h2 className="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {emotionsData.map(e => (
+                      <button
+                        key={e.id}
+                        onClick={() => {
+                          setSelectedEmotion(e);
+                          audioSystem.playPop(1.2);
+                        }}
+                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
+                      >
+                        <div className="text-5xl mb-2">{e.emoji}</div>
+                        <div className="font-bold">{e.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
+                    <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
+                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'routines' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold">📅 Cartões de Rotina Diária</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {['Todos', 'Manhã', 'Tarde', 'Noite', 'Dia'].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${selectedCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredRoutines.map(r => (
+                      <div 
+                        key={r.id}
+                        onClick={() => completeRoutine(r.id)}
+                        className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-60' : 'bg-white border-slate-200'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{r.icon}</span>
+                          <div>
+                            <p className={`font-bold ${r.completed ? 'line-through text-slate-500' : ''}`}>{r.title}</p>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{r.time}</span>
+                          </div>
+                        </div>
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
+                          {r.completed ? '✓' : ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+
+          {showParentModal && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
+                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
+                
+                <div>
+                  <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3].map(lvl => (
+                      <button 
+                        key={lvl}
+                        onClick={() => setSupportLevel(lvl)}
+                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                      >
+                        Nível {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-1">Tema Visual:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['pastel', 'dark', 'contrast'].map(t => (
+                      <button 
+                        key={t}
+                        onClick={() => setThemeMode(t)}
+                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowParentModal(false)}
+                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+
+          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
+            <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
+          </footer>
+        </div>
+      );
+    }
+
+    // Renderização compatível com React 18 no navegador
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App
       const getCardStyle = () => {
         if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
         if (themeMode === 'contrast')
