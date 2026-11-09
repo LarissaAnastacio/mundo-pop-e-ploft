@@ -4,23 +4,164 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mundo Pop! & Ploft!</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease;
+      box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.15);
+      animation: float 3s ease-in-out infinite alternate;
+    }
+    .bubble:active {
+      transform: scale(0.8);
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-12px); }
+    }
+  </style>
 </head>
-<body class="bg-amber-50 text-slate-800 font-sans">
-  <div id="root"></div>
+<body id="app-body" class="bg-amber-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between p-4 md:p-8">
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+  <!-- CABEÇALHO -->
+  <header class="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto w-full">
+    <div class="flex items-center gap-3">
+      <button onclick="switchModule('home')" class="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+        Mundo Pop! & Ploft!
+      </button>
+      <span id="level-badge" class="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
+        Nível 2 (Moderado)
+      </span>
+    </div>
 
+    <div class="flex items-center gap-2">
+      <button id="btn-home" onclick="switchModule('home')" class="hidden p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition">
+        🏠 Início
+      </button>
+      <button id="btn-audio" onclick="toggleAudio()" class="p-3 rounded-xl border bg-white font-semibold shadow-sm hover:bg-slate-50 transition">
+        🔊 Som OK
+      </button>
+      <button onclick="toggleSettingsModal(true)" class="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition">
+        ⚙️ Ajustes
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="max-w-6xl mx-auto w-full flex-1">
+
+    <!-- MÓDULO: HOME -->
+    <section id="mod-home" class="space-y-8">
+      <div id="hero-card" onclick="spawnBubble(event)" class="relative overflow-hidden min-h-[240px] rounded-3xl border-4 border-dashed border-pink-300 bg-white/90 backdrop-blur-md shadow-md p-6 flex flex-col items-center justify-center cursor-pointer select-none">
+        <div id="home-bubbles-container" class="absolute inset-0 pointer-events-none"></div>
+        <h1 class="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm pointer-events-none">
+          Mundo Pop! & Ploft!
+        </h1>
+        <p class="text-center font-medium opacity-80 z-10 pointer-events-none">
+          Clique em qualquer lugar para criar e estourar bolhas! 🫧
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div onclick="switchModule('bubbles')" class="bg-white/90 p-6 rounded-3xl text-left cursor-pointer hover:scale-105 transition-all border-b-8 border-pink-400 shadow-md">
+          <div class="text-4xl mb-3">🫧</div>
+          <h2 class="text-xl font-bold mb-1">Bolhas Sensoriais</h2>
+          <p class="text-sm opacity-75">Toque livre sem tempo ou regras. Estouro calmo e relaxante.</p>
+        </div>
+
+        <div onclick="switchModule('emotions')" class="bg-white/90 p-6 rounded-3xl text-left cursor-pointer hover:scale-105 transition-all border-b-8 border-purple-400 shadow-md">
+          <div class="text-4xl mb-3">😊</div>
+          <h2 class="text-xl font-bold mb-1">Expressar Sentimentos</h2>
+          <p class="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo agora.</p>
+        </div>
+
+        <div onclick="switchModule('routines')" class="bg-white/90 p-6 rounded-3xl text-left cursor-pointer hover:scale-105 transition-all border-b-8 border-emerald-400 shadow-md">
+          <div class="text-4xl mb-3">📅</div>
+          <h2 class="text-xl font-bold mb-1">Minha Rotina Completa</h2>
+          <p class="text-sm opacity-75">Escola, faculdade, trabalho, médico, terapia, lazer e muito mais!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO: BOLHAS -->
+    <section id="mod-bubbles" class="hidden bg-white/90 p-6 rounded-3xl shadow-md space-y-4">
+      <h2 class="text-2xl font-bold">🫧 Estourar Bolhas Calmas</h2>
+      <div id="bubbles-playground" onclick="spawnPlaygroundBubble(event)" class="w-full h-96 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-sky-50/40 cursor-pointer"></div>
+    </section>
+
+    <!-- MÓDULO: EMOÇÕES -->
+    <section id="mod-emotions" class="hidden bg-white/90 p-6 rounded-3xl shadow-md space-y-6">
+      <h2 class="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="emotions-grid"></div>
+      <div id="emotion-detail" class="p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-center">
+        <p id="emotion-title" class="text-xl font-bold mb-1">😊 Feliz</p>
+        <p id="emotion-desc" class="text-sm text-slate-600">Quando nos sentimos sorridentes e contentes</p>
+      </div>
+    </section>
+
+    <!-- MÓDULO: ROTINAS -->
+    <section id="mod-routines" class="hidden bg-white/90 p-6 rounded-3xl shadow-md space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-2xl font-bold">📅 Cartões de Rotina Diária</h2>
+        <div class="flex flex-wrap gap-2" id="routine-filters">
+          <button onclick="filterRoutines('Todos')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-indigo-600 text-white">Todos</button>
+          <button onclick="filterRoutines('Manhã')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-slate-100">Manhã</button>
+          <button onclick="filterRoutines('Tarde')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-slate-100">Tarde</button>
+          <button onclick="filterRoutines('Noite')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-slate-100">Noite</button>
+          <button onclick="filterRoutines('Dia')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-slate-100">Dia</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="routines-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE AJUSTES -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-3xl max-w-md w-full space-y-4 shadow-xl">
+      <h3 class="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
+      
+      <div>
+        <label class="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="setSupportLevel(1)" class="p-2 rounded-xl font-bold border bg-slate-100 hover:bg-indigo-50">Nível 1</button>
+          <button onclick="setSupportLevel(2)" class="p-2 rounded-xl font-bold border bg-indigo-600 text-white">Nível 2</button>
+          <button onclick="setSupportLevel(3)" class="p-2 rounded-xl font-bold border bg-slate-100 hover:bg-indigo-50">Nível 3</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold mb-1">Tema Visual:</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="setTheme('pastel')" class="p-2 rounded-xl font-bold border bg-slate-100">Pastel</button>
+          <button onclick="setTheme('dark')" class="p-2 rounded-xl font-bold border bg-slate-100">Escuro</button>
+          <button onclick="setTheme('contrast')" class="p-2 rounded-xl font-bold border bg-slate-100">Alto Contraste</button>
+        </div>
+      </div>
+
+      <button onclick="toggleSettingsModal(false)" class="w-full py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition">
+        Fechar
+      </button>
+    </div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <footer class="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
+    <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
+  </footer>
+
+  <!-- SCRIPT LÓGICO PRINCIPAL EM JAVASCRIPT NATIVO -->
+  <script>
+    // --- SISTEMA DE ÁUDIO SUAVE (SINTETIZADOR WEB AUDIO API) ---
     class SensoryAudio {
       constructor() {
         this.ctx = null;
         this.isMuted = false;
       }
-
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -30,407 +171,248 @@
           this.ctx.resume();
         }
       }
-
       playTone(freq = 440, type = 'sine', duration = 0.3, volume = 0.1) {
         if (this.isMuted) return;
         try {
           this.init();
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-
           osc.type = type;
           osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
           gain.gain.setValueAtTime(0, this.ctx.currentTime);
           gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-
           osc.connect(gain);
           gain.connect(this.ctx.destination);
-
           osc.start();
           osc.stop(this.ctx.currentTime + duration);
         } catch (e) {
-          console.error("Audio error", e);
+          console.error(e);
         }
       }
-
       playPop(pitchMultiplier = 1) {
-        if (this.isMuted) return;
-        const baseFreq = 320 * pitchMultiplier;
-        this.playTone(baseFreq, 'sine', 0.15, 0.12);
+        this.playTone(320 * pitchMultiplier, 'sine', 0.15, 0.12);
       }
-
       playSuccess() {
-        if (this.isMuted) return;
         const notes = [261.63, 329.63, 392.00, 523.25];
-        notes.forEach((freq, index) => {
-          setTimeout(() => {
-            this.playTone(freq, 'sine', 0.4, 0.08);
-          }, index * 90);
+        notes.forEach((freq, i) => {
+          setTimeout(() => this.playTone(freq, 'sine', 0.4, 0.08), i * 90);
         });
       }
     }
 
-    const audioSystem = new SensoryAudio();
+    const audio = new SensoryAudio();
+    let currentSupportLevel = 2;
+    let currentCategory = 'Todos';
 
-    function App() {
-      const [supportLevel, setSupportLevel] = useState(2);
-      const [themeMode, setThemeMode] = useState('pastel');
-      const [isMuted, setIsMuted] = useState(false);
-      const [reduceMotion, setReduceMotion] = useState(false);
-      const [activeModule, setActiveModule] = useState('home');
-      const [showParentModal, setShowParentModal] = useState(false);
-      const [selectedCategory, setSelectedCategory] = useState('Todos');
+    // DADOS DAS EMOÇÕES
+    const emotions = [
+      { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
+      { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
+      { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
+      { id: 'angry', emoji: '😡', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' }
+    ];
 
-      const [bubbles, setBubbles] = useState([]);
-      useEffect(() => {
-        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
-          id: Date.now() + i,
-          x: 10 + (i * 11) % 80,
-          y: 20 + (i * 15) % 60,
-          size: 70 + (i % 3) * 20,
-          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
-        }));
-        setBubbles(initialBubbles);
-      }, []);
+    // DADOS DAS ROTINAS COMPLETAS
+    const routines = [
+      { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅', completed: false },
+      { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥', completed: false },
+      { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿', completed: false },
+      { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣', completed: false },
+      { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊', completed: false },
+      { id: 6, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼', completed: false },
+      { id: 7, title: 'Ir para a Escola / Creche', time: 'Manhã', icon: '🎒', completed: false },
+      { id: 8, title: 'Ir para a Faculdade / Curso', time: 'Tarde', icon: '🎓', completed: false },
+      { id: 9, title: 'Trabalhar / Tarefas', time: 'Tarde', icon: '💻', completed: false },
+      { id: 10, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚', completed: false },
+      { id: 11, title: 'Ir à Terapia / Fono / TO', time: 'Tarde', icon: '🧩', completed: false },
+      { id: 12, title: 'Consulta no Médico / Dentista', time: 'Tarde', icon: '🩺', completed: false },
+      { id: 13, title: 'Beber Água e Se Hidratar', time: 'Dia', icon: '🥤', completed: false },
+      { id: 14, title: 'Fazer Exercício / Alongamento', time: 'Tarde', icon: '🏃', completed: false },
+      { id: 15, title: 'Almoçar', time: 'Tarde', icon: '🍽️', completed: false },
+      { id: 16, title: 'Lanche da Tarde', time: 'Tarde', icon: '🍎', completed: false },
+      { id: 17, title: 'Conversar com Amigos / Família', time: 'Tarde', icon: '💬', completed: false },
+      { id: 18, title: 'Brincar / Jogar / Momento Livre', time: 'Tarde', icon: '🎨', completed: false },
+      { id: 19, title: 'Jantar', time: 'Noite', icon: '🍲', completed: false },
+      { id: 20, title: 'Guardar Brinquedos e Fazer Mochila', time: 'Noite', icon: '🧸', completed: false },
+      { id: 21, title: 'Momento de Relaxar / Desconectar', time: 'Noite', icon: '🎧', completed: false },
+      { id: 22, title: 'Hora de Dormir', time: 'Noite', icon: '🌙', completed: false }
+    ];
 
-      const emotionsData = [
-        { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
-        { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
-        { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
-        { id: 'angry', emoji: '😡', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' }
-      ];
-      const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
+    // NAVEGAÇÃO DE MÓDULOS
+    function switchModule(mod) {
+      document.getElementById('mod-home').classList.add('hidden');
+      document.getElementById('mod-bubbles').classList.add('hidden');
+      document.getElementById('mod-emotions').classList.add('hidden');
+      document.getElementById('mod-routines').classList.add('hidden');
+      
+      document.getElementById(`mod-${mod}`).classList.remove('hidden');
+      document.getElementById('btn-home').classList.toggle('hidden', mod === 'home');
 
-      const initialRoutines = [
-        { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅', completed: false },
-        { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥', completed: false },
-        { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿', completed: false },
-        { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣', completed: false },
-        { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊', completed: false },
-        { id: 6, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼', completed: false },
-        { id: 7, title: 'Ir para a Escola / Creche', time: 'Manhã', icon: '🎒', completed: false },
-        { id: 8, title: 'Ir para a Faculdade / Curso', time: 'Tarde', icon: '🎓', completed: false },
-        { id: 9, title: 'Trabalhar / Tarefas', time: 'Tarde', icon: '💻', completed: false },
-        { id: 10, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚', completed: false },
-        { id: 11, title: 'Ir à Terapia / Fono / TO', time: 'Tarde', icon: '🧩', completed: false },
-        { id: 12, title: 'Consulta no Médico / Dentista', time: 'Tarde', icon: '🩺', completed: false },
-        { id: 13, title: 'Beber Água e Se Hidratar', time: 'Dia', icon: '🥤', completed: false },
-        { id: 14, title: 'Fazer Exercício / Alongamento', time: 'Tarde', icon: '🏃', completed: false },
-        { id: 15, title: 'Almoçar', time: 'Tarde', icon: '🍽️', completed: false },
-        { id: 16, title: 'Lanche da Tarde', time: 'Tarde', icon: '🍎', completed: false },
-        { id: 17, title: 'Conversar com Amigos / Família', time: 'Tarde', icon: '💬', completed: false },
-        { id: 18, title: 'Brincar / Jogar / Momento Livre', time: 'Tarde', icon: '🎨', completed: false },
-        { id: 19, title: 'Jantar', time: 'Noite', icon: '🍲', completed: false },
-        { id: 20, title: 'Guardar Brinquedos e Fazer a Mochila', time: 'Noite', icon: '🧸', completed: false },
-        { id: 21, title: 'Momento de Relaxar / Desconectar', time: 'Noite', icon: '🎧', completed: false },
-        { id: 22, title: 'Hora de Dormir', time: 'Noite', icon: '🌙', completed: false }
-      ];
-      const [routines, setRoutines] = useState(initialRoutines);
-
-      useEffect(() => {
-        audioSystem.isMuted = isMuted;
-      }, [isMuted]);
-
-      const createBubble = (x, y) => {
-        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        const newBubble = {
-          id: Date.now() + Math.random(),
-          x: x || Math.random() * 80 + 10,
-          y: y || Math.random() * 70 + 15,
-          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
-          color: randomColor
-        };
-        setBubbles(prev => [...prev.slice(-18), newBubble]);
-      };
-
-      const handleBubbleClick = (id) => {
-        audioSystem.playPop(0.8 + Math.random() * 0.5);
-        setBubbles(prev => prev.filter(b => b.id !== id));
-      };
-
-      const completeRoutine = (id) => {
-        setRoutines(routines.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
-        audioSystem.playSuccess();
-      };
-
-      const filteredRoutines = selectedCategory === 'Todos' 
-        ? routines 
-        : routines.filter(r => r.time === selectedCategory);
-
-      const getThemeClass = () => {
-        if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
-        if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
-        return 'bg-amber-50/60 text-slate-800';
-      };
-
-      const getCardStyle = () => {
-        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
-        if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
-        return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
-      };
-
-      return (
-        <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
-          <div>
-            <header className="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setActiveModule('home')} 
-                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
-                >
-                  Mundo Pop! & Ploft!
-                </button>
-                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
-                  Nível {supportLevel}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {activeModule !== 'home' && (
-                  <button 
-                    onClick={() => setActiveModule('home')}
-                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition"
-                  >
-                    🏠 Início
-                  </button>
-                )}
-                <button 
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="p-3 rounded-xl border font-semibold transition"
-                >
-                  {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
-                </button>
-                <button 
-                  onClick={() => setShowParentModal(true)}
-                  className="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition"
-                >
-                  ⚙️ Ajustes
-                </button>
-              </div>
-            </header>
-
-            <main className="max-w-6xl mx-auto">
-              {activeModule === 'home' && (
-                <div className="space-y-8">
-                  <div 
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
-                    }}
-                    className={`relative overflow-hidden min-h-[220px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
-                  >
-                    {bubbles.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBubbleClick(b.id);
-                        }}
-                        style={{
-                          left: `${b.x}%`,
-                          top: `${b.y}%`,
-                          width: `${b.size}px`,
-                          height: `${b.size}px`,
-                          backgroundColor: b.color
-                        }}
-                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
-                      />
-                    ))}
-                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
-                      Mundo Pop! & Ploft!
-                    </h1>
-                    <p className="text-center font-medium opacity-80 z-10">
-                      Clique em qualquer lugar para criar e estourar bolhas! 🫧
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button 
-                      onClick={() => setActiveModule('bubbles')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
-                    >
-                      <div className="text-4xl mb-3">🫧</div>
-                      <h2 className="text-xl font-bold mb-1">Bolhas Sensoriais</h2>
-                      <p className="text-sm opacity-75">Toque livre sem tempo ou regras. Estouro calmo e relaxante.</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('emotions')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
-                    >
-                      <div className="text-4xl mb-3">😊</div>
-                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
-                      <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo agora.</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('routines')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
-                    >
-                      <div className="text-4xl mb-3">📅</div>
-                      <h2 className="text-xl font-bold mb-1">Minha Rotina Completa</h2>
-                      <p className="text-sm opacity-75">Escola, faculdade, trabalho, médico, terapia, lazer e muito mais!</p>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'bubbles' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl min-h-[400px] relative`}>
-                  <h2 className="text-2xl font-bold mb-4">🫧 Estourar Bolhas Calmas</h2>
-                  <div 
-                    className="w-full h-80 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-sky-50/30 cursor-pointer"
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
-                    }}
-                  >
-                    {bubbles.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBubbleClick(b.id);
-                        }}
-                        style={{
-                          left: `${b.x}%`,
-                          top: `${b.y}%`,
-                          width: `${b.size}px`,
-                          height: `${b.size}px`,
-                          backgroundColor: b.color
-                        }}
-                        className="absolute rounded-full shadow-md border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'emotions' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <h2 className="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {emotionsData.map(e => (
-                      <button
-                        key={e.id}
-                        onClick={() => {
-                          setSelectedEmotion(e);
-                          audioSystem.playPop(1.2);
-                        }}
-                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
-                      >
-                        <div className="text-5xl mb-2">{e.emoji}</div>
-                        <div className="font-bold">{e.label}</div>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
-                    <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
-                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'routines' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">📅 Cartões de Rotina Diária</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {['Todos', 'Manhã', 'Tarde', 'Noite', 'Dia'].map(cat => (
-                        <button
-                          key={cat}
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${selectedCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredRoutines.map(r => (
-                      <div 
-                        key={r.id}
-                        onClick={() => completeRoutine(r.id)}
-                        className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-60' : 'bg-white border-slate-200'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl">{r.icon}</span>
-                          <div>
-                            <p className={`font-bold ${r.completed ? 'line-through text-slate-500' : ''}`}>{r.title}</p>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{r.time}</span>
-                          </div>
-                        </div>
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
-                          {r.completed ? '✓' : ''}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </main>
-          </div>
-
-          {showParentModal && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
-                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
-                
-                <div>
-                  <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[1, 2, 3].map(lvl => (
-                      <button 
-                        key={lvl}
-                        onClick={() => setSupportLevel(lvl)}
-                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
-                      >
-                        Nível {lvl}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-1">Tema Visual:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['pastel', 'dark', 'contrast'].map(t => (
-                      <button 
-                        key={t}
-                        onClick={() => setThemeMode(t)}
-                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setShowParentModal(false)}
-                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          )}
-
-          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
-            <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
-          </footer>
-        </div>
-      );
+      if (mod === 'emotions') renderEmotions();
+      if (mod === 'routines') renderRoutines();
+      if (mod === 'bubbles') fillPlayground();
     }
 
-    // Renderização compatível com React 18 no navegador
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App
-      const getCardStyle = () => {
-        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
-        if (themeMode === 'contrast')
+    // NAVEGAÇÃO DE ÁUDIO
+    function toggleAudio() {
+      audio.isMuted = !audio.isMuted;
+      document.getElementById('btn-audio').textContent = audio.isMuted ? '🔇 Mudo' : '🔊 Som OK';
+    }
+
+    // CRIADOR DE BOLHAS
+    function createBubbleElement(x, y, size, container, isPointerEventsOverridden = false) {
+      const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      const bSize = size || (currentSupportLevel === 3 ? 90 : currentSupportLevel === 2 ? 70 : 55);
+
+      bubble.style.width = `${bSize}px`;
+      bubble.style.height = `${bSize}px`;
+      bubble.style.backgroundColor = randomColor;
+      bubble.style.left = `${x}px`;
+      bubble.style.top = `${y}px`;
+      
+      if (isPointerEventsOverridden) {
+        bubble.style.pointerEvents = 'auto';
+      }
+
+      const popAction = (e) => {
+        e.stopPropagation();
+        audio.playPop(0.8 + Math.random() * 0.5);
+        bubble.remove();
+      };
+
+      bubble.addEventListener('click', popAction);
+      bubble.addEventListener('touchstart', popAction);
+
+      container.appendChild(bubble);
+    }
+
+    function spawnBubble(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left - 35;
+      const y = e.clientY - rect.top - 35;
+      const container = document.getElementById('home-bubbles-container');
+      createBubbleElement(x, y, null, container, true);
+    }
+
+    function spawnPlaygroundBubble(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left - 35;
+      const y = e.clientY - rect.top - 35;
+      const container = document.getElementById('bubbles-playground');
+      createBubbleElement(x, y, null, container);
+    }
+
+    function fillPlayground() {
+      const container = document.getElementById('bubbles-playground');
+      container.innerHTML = '';
+      for (let i = 0; i < 8; i++) {
+        const x = 30 + (i * 90) % (container.clientWidth - 80);
+        const y = 30 + (i * 60) % (container.clientHeight - 80);
+        createBubbleElement(x, y, null, container);
+      }
+    }
+
+    // RENDERIZADOR DE EMOÇÕES
+    function renderEmotions() {
+      const grid = document.getElementById('emotions-grid');
+      grid.innerHTML = '';
+      emotions.forEach(e => {
+        const btn = document.createElement('button');
+        btn.className = 'p-6 rounded-2xl border-4 text-center transition bg-slate-100/60 hover:bg-indigo-50 border-transparent hover:border-indigo-300';
+        btn.innerHTML = `<div class="text-5xl mb-2">${e.emoji}</div><div class="font-bold">${e.label}</div>`;
+        btn.onclick = () => {
+          audio.playPop(1.2);
+          document.getElementById('emotion-title').textContent = `${e.emoji} ${e.label}`;
+          document.getElementById('emotion-desc').textContent = e.desc;
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    // RENDERIZADOR DE ROTINAS
+    function renderRoutines() {
+      const grid = document.getElementById('routines-grid');
+      grid.innerHTML = '';
+      
+      const filtered = currentCategory === 'Todos' 
+        ? routines 
+        : routines.filter(r => r.time === currentCategory);
+
+      filtered.forEach(r => {
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-60' : 'bg-white border-slate-200'}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">${r.icon}</span>
+            <div>
+              <p class="font-bold ${r.completed ? 'line-through text-slate-500' : ''}">${r.title}</p>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">${r.time}</span>
+            </div>
+          </div>
+          <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">
+            ${r.completed ? '✓' : ''}
+          </div>
+        `;
+        card.onclick = () => {
+          r.completed = !r.completed;
+          audio.playSuccess();
+          renderRoutines();
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function filterRoutines(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.textContent === cat) {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-indigo-600 text-white';
+        } else {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-xl font-bold text-sm bg-slate-100';
+        }
+      });
+      renderRoutines();
+    }
+
+    // CONTROLE DE AJUSTES
+    function toggleSettingsModal(show) {
+      document.getElementById('settings-modal').classList.toggle('hidden', !show);
+    }
+
+    function setSupportLevel(lvl) {
+      currentSupportLevel = lvl;
+      const labels = { 1: 'Nível 1 (Leve)', 2: 'Nível 2 (Moderado)', 3: 'Nível 3 (Elevado Suporte)' };
+      document.getElementById('level-badge').textContent = labels[lvl];
+      toggleSettingsModal(false);
+    }
+
+    function setTheme(theme) {
+      const body = document.getElementById('app-body');
+      if (theme === 'dark') {
+        body.className = 'bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between p-4 md:p-8';
+      } else if (theme === 'contrast') {
+        body.className = 'bg-black text-yellow-300 font-bold min-h-screen flex flex-col justify-between p-4 md:p-8';
+      } else {
+        body.className = 'bg-amber-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between p-4 md:p-8';
+      }
+      toggleSettingsModal(false);
+    }
+
+    // INICIALIZAÇÃO DA PÁGINA
+    document.getElementById("year").textContent = new Date().getFullYear();
+    
+    // Gerar algumas bolhas iniciais na home
+    window.onload = () => {
+      const container = document.getElementById('home-bubbles-container');
+      for (let i = 0; i < 5; i++) {
+        createBubbleElement(30 + i * 100, 20 + (i % 2) * 40, null, container, true);
+      }
+    };
+  </script>
+</body>
+</html>
