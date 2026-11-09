@@ -15,7 +15,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- SISTEMA DE SÍNTESE SONORA SUAVE ---
+    // --- SISTEMA DE SÍNTESE SONORA E SONS DE ANIMAIS ---
     class SensoryAudio {
       constructor() {
         this.ctx = null;
@@ -41,7 +41,6 @@
 
           osc.type = type;
           osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
           gain.gain.setValueAtTime(0, this.ctx.currentTime);
           gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
@@ -71,378 +70,179 @@
           }, index * 90);
         });
       }
+
+      playAnimalSound(type) {
+        if (this.isMuted) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        switch (type) {
+          case 'cavalo':
+            for (let i = 0; i < 4; i++) {
+              setTimeout(() => {
+                this.playTone(600 - (i * 80), 'sawtooth', 0.1, 0.15);
+              }, i * 60);
+            }
+            break;
+          case 'vaca':
+            this.playTone(130, 'triangle', 0.9, 0.2);
+            break;
+          case 'cachorro':
+            this.playTone(280, 'sawtooth', 0.15, 0.2);
+            setTimeout(() => this.playTone(320, 'sawtooth', 0.15, 0.2), 200);
+            break;
+          case 'gato':
+            this.playTone(550, 'sine', 0.2, 0.15);
+            setTimeout(() => this.playTone(450, 'sine', 0.3, 0.15), 180);
+            break;
+          case 'leao':
+            this.playTone(90, 'sawtooth', 0.8, 0.3);
+            break;
+          case 'elefante':
+            this.playTone(450, 'sawtooth', 0.6, 0.25);
+            break;
+          case 'galo':
+            this.playTone(500, 'sine', 0.2, 0.2);
+            setTimeout(() => this.playTone(750, 'sine', 0.4, 0.25), 200);
+            break;
+          case 'ovelha':
+            this.playTone(220, 'sawtooth', 0.5, 0.2);
+            break;
+          case 'pato':
+            this.playTone(300, 'square', 0.15, 0.15);
+            setTimeout(() => this.playTone(280, 'square', 0.15, 0.15), 150);
+            break;
+          case 'porco':
+            this.playTone(180, 'square', 0.1, 0.2);
+            setTimeout(() => this.playTone(160, 'square', 0.1, 0.2), 120);
+            break;
+          case 'macaco':
+            this.playTone(600, 'sine', 0.1, 0.15);
+            setTimeout(() => this.playTone(800, 'sine', 0.1, 0.15), 120);
+            setTimeout(() => this.playTone(600, 'sine', 0.1, 0.15), 240);
+            break;
+          case 'coruja':
+            this.playTone(350, 'sine', 0.3, 0.15);
+            setTimeout(() => this.playTone(300, 'sine', 0.4, 0.15), 350);
+            break;
+          default:
+            this.playPop();
+        }
+      }
     }
 
     const audioSystem = new SensoryAudio();
 
-    function App() {
-      const [supportLevel, setSupportLevel] = useState(2);
-      const [themeMode, setThemeMode] = useState('pastel');
-      const [isMuted, setIsMuted] = useState(false);
-      const [reduceMotion, setReduceMotion] = useState(false);
-      const [activeModule, setActiveModule] = useState('home');
-      const [showParentModal, setShowParentModal] = useState(false);
-      const [selectedCategory, setSelectedCategory] = useState('Todos');
-
-      const [bubbles, setBubbles] = useState([]);
-      useEffect(() => {
-        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
-          id: Date.now() + i,
-          x: 10 + (i * 11) % 80,
-          y: 20 + (i * 15) % 60,
-          size: 70 + (i % 3) * 20,
-          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
-        }));
-        setBubbles(initialBubbles);
-      }, []);
-
-      const emotionsData = [
-        { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
-        { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
-        { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
-        { id: 'angry', emoji: '😡', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' }
-      ];
-      const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
-
-      // --- LISTA EXPANDIDA DE ROTINAS ---
-      const initialRoutines = [
-        // Manhã & Cuidados Pessoais
-        { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅', completed: false },
-        { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥', completed: false },
-        { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿', completed: false },
-        { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣', completed: false },
-        { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊', completed: false },
-        { id: 6, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼', completed: false },
-
-        // Estudos & Trabalho
-        { id: 7, title: 'Ir para a Escola / Creche', time: 'Manhã', icon: '🎒', completed: false },
-        { id: 8, title: 'Ir para a Faculdade / Curso', time: 'Tarde', icon: '🎓', completed: false },
-        { id: 9, title: 'Trabalhar / Tarefas', time: 'Tarde', icon: '💻', completed: false },
-        { id: 10, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚', completed: false },
-
-        // Saúde & Acompanhamento
-        { id: 11, title: 'Ir à Terapia / Fono / TO', time: 'Tarde', icon: '🧩', completed: false },
-        { id: 12, title: 'Consulta no Médico / Dentista', time: 'Tarde', icon: '🩺', completed: false },
-        { id: 13, title: 'Beber Água e Se Hidratar', time: 'Dia', icon: '🥤', completed: false },
-        { id: 14, title: 'Fazer Exercício / Alongamento', time: 'Tarde', icon: '🏃', completed: false },
-
-        // Alimentação & Lazer
-        { id: 15, title: 'Almoçar', time: 'Tarde', icon: '🍽️', completed: false },
-        { id: 16, title: 'Lanche da Tarde', time: 'Tarde', icon: '🍎', completed: false },
-        { id: 17, title: 'Conversar com Amigos / Família', time: 'Tarde', icon: '💬', completed: false },
-        { id: 18, title: 'Brincar / Jogar / Momento Livre', time: 'Tarde', icon: '🎨', completed: false },
-
-        // Noite & Organização
-        { id: 19, title: 'Jantar', time: 'Noite', icon: '🍲', completed: false },
-        { id: 20, title: 'Guardar Brinquedos e Fazer a Mochila', time: 'Noite', icon: '🧸', completed: false },
-        { id: 21, title: 'Momento de Relaxar / Desconectar', time: 'Noite', icon: '🎧', completed: false },
-        { id: 22, title: 'Hora de Dormir', time: 'Noite', icon: '🌙', completed: false }
-      ];
-      const [routines, setRoutines] = useState(initialRoutines);
-
-      useEffect(() => {
-        audioSystem.isMuted = isMuted;
-      }, [isMuted]);
-
-      const createBubble = (x, y) => {
-        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        const newBubble = {
-          id: Date.now() + Math.random(),
-          x: x || Math.random() * 80 + 10,
-          y: y || Math.random() * 70 + 15,
-          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
-          color: randomColor
-        };
-        setBubbles(prev => [...prev.slice(-18), newBubble]);
-      };
-
-      const handleBubbleClick = (id) => {
-        audioSystem.playPop(0.8 + Math.random() * 0.5);
-        setBubbles(prev => prev.filter(b => b.id !== id));
-      };
-
-      const completeRoutine = (id) => {
-        setRoutines(routines.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
-        audioSystem.playSuccess();
-      };
-
-      const filteredRoutines = selectedCategory === 'Todos' 
-        ? routines 
-        : routines.filter(r => r.time === selectedCategory);
-
-      const getThemeClass = () => {
-        if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
-        if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
-        return 'bg-amber-50/60 text-slate-800';
-      };
-
-      const getCardStyle = () => {
-        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
-        if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
-        return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
-      };
-
-      return (
-        <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
-          <div>
-            <header className="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setActiveModule('home')} 
-                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
-                >
-                  Mundo Pop! & Ploft!
-                </button>
-                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
-                  Nível {supportLevel}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {activeModule !== 'home' && (
-                  <button 
-                    onClick={() => setActiveModule('home')}
-                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition"
-                  >
-                    🏠 Início
-                  </button>
-                )}
-                <button 
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="p-3 rounded-xl border font-semibold transition"
-                >
-                  {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
-                </button>
-                <button 
-                  onClick={() => setShowParentModal(true)}
-                  className="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition"
-                >
-                  ⚙️ Ajustes
-                </button>
-              </div>
-            </header>
-
-            <main className="max-w-6xl mx-auto">
-              {activeModule === 'home' && (
-                <div className="space-y-8">
-                  <div 
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
-                    }}
-                    className={`relative overflow-hidden min-h-[220px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
-                  >
-                    {bubbles.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBubbleClick(b.id);
-                        }}
-                        style={{
-                          left: `${b.x}%`,
-                          top: `${b.y}%`,
-                          width: `${b.size}px`,
-                          height: `${b.size}px`,
-                          backgroundColor: b.color
-                        }}
-                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
-                      />
-                    ))}
-                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
-                      Mundo Pop! & Ploft!
-                    </h1>
-                    <p className="text-center font-medium opacity-80 z-10">
-                      Clique em qualquer lugar para criar e estourar bolhas! 🫧
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button 
-                      onClick={() => setActiveModule('bubbles')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
-                    >
-                      <div className="text-4xl mb-3">🫧</div>
-                      <h2 className="text-xl font-bold mb-1">Bolhas Sensoriais</h2>
-                      <p className="text-sm opacity-75">Toque livre sem tempo ou regras. Estouro calmo e relaxante.</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('emotions')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
-                    >
-                      <div className="text-4xl mb-3">😊</div>
-                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
-                      <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo agora.</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('routines')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
-                    >
-                      <div className="text-4xl mb-3">📅</div>
-                      <h2 className="text-xl font-bold mb-1">Minha Rotina Completa</h2>
-                      <p className="text-sm opacity-75">Escola, faculdade, trabalho, médico, terapia, lazer e muito mais!</p>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'bubbles' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl min-h-[400px] relative`}>
-                  <h2 className="text-2xl font-bold mb-4">🫧 Estourar Bolhas Calmas</h2>
-                  <div 
-                    className="w-full h-80 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-sky-50/30 cursor-pointer"
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
-                    }}
-                  >
-                    {bubbles.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBubbleClick(b.id);
-                        }}
-                        style={{
-                          left: `${b.x}%`,
-                          top: `${b.y}%`,
-                          width: `${b.size}px`,
-                          height: `${b.size}px`,
-                          backgroundColor: b.color
-                        }}
-                        className="absolute rounded-full shadow-md border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'emotions' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <h2 className="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {emotionsData.map(e => (
-                      <button
-                        key={e.id}
-                        onClick={() => {
-                          setSelectedEmotion(e);
-                          audioSystem.playPop(1.2);
-                        }}
-                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
-                      >
-                        <div className="text-5xl mb-2">{e.emoji}</div>
-                        <div className="font-bold">{e.label}</div>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
-                    <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
-                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
-                  </div>
-                </div>
-              )}
-
-              {activeModule === 'routines' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">📅 Cartões de Rotina Diária</h2>
-                    
-                    {/* Filtros de Categoria */}
-                    <div className="flex flex-wrap gap-2">
-                      {['Todos', 'Manhã', 'Tarde', 'Noite', 'Dia'].map(cat => (
-                        <button
-                          key={cat}
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${selectedCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredRoutines.map(r => (
-                      <div 
-                        key={r.id}
-                        onClick={() => completeRoutine(r.id)}
-                        className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-60' : 'bg-white border-slate-200'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl">{r.icon}</span>
-                          <div>
-                            <p className={`font-bold ${r.completed ? 'line-through text-slate-500' : ''}`}>{r.title}</p>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{r.time}</span>
-                          </div>
-                        </div>
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
-                          {r.completed ? '✓' : ''}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </main>
-          </div>
-
-          {showParentModal && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
-                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
-                
-                <div>
-                  <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[1, 2, 3].map(lvl => (
-                      <button 
-                        key={lvl}
-                        onClick={() => setSupportLevel(lvl)}
-                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
-                      >
-                        Nível {lvl}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold mb-1">Tema Visual:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['pastel', 'dark', 'contrast'].map(t => (
-                      <button 
-                        key={t}
-                        onClick={() => setThemeMode(t)}
-                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setShowParentModal(false)}
-                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          )}
-
-          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
-            <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
-          </footer>
-        </div>
-      );
-    }
-
-    ReactDOM.render(<App />, document.getElementById('root'));
-    document.getElementById("year").textContent = new Date().getFullYear();
-  </script>
-</body>
-</html>
+    // --- BANCO DE DESENHOS PRECISOS PARA O LIGUE OS PONTOS ---
+    const dotToDotData = {
+      'Carros & Motos': [
+        {
+          id: 'car',
+          name: 'Carro Esporte',
+          emoji: '🚗',
+          color: '#EF4444',
+          svgPath: "M 40,160 L 70,160 L 90,110 L 170,80 L 250,80 L 300,110 L 350,160 L 370,160 L 370,200 L 350,210 L 320,210 L 300,190 L 260,190 L 240,210 L 130,210 L 110,190 L 70,190 L 50,210 L 40,200 Z",
+          dots: [
+            { id: 1, x: 40, y: 160 },
+            { id: 2, x: 70, y: 160 },
+            { id: 3, x: 90, y: 110 },
+            { id: 4, x: 170, y: 80 },
+            { id: 5, x: 250, y: 80 },
+            { id: 6, x: 300, y: 110 },
+            { id: 7, x: 350, y: 160 },
+            { id: 8, x: 370, y: 160 },
+            { id: 9, x: 370, y: 200 },
+            { id: 10, x: 350, y: 210 },
+            { id: 11, x: 250, y: 210 },
+            { id: 12, x: 130, y: 210 },
+            { id: 13, x: 40, y: 200 }
+          ]
+        },
+        {
+          id: 'moto',
+          name: 'Motocicleta',
+          emoji: '🏍️',
+          color: '#3B82F6',
+          svgPath: "M 60,170 L 100,100 L 140,100 L 180,130 L 250,130 L 310,170 L 340,170 L 340,210 L 280,210 L 220,180 L 140,180 L 80,210 Z",
+          dots: [
+            { id: 1, x: 60, y: 170 },
+            { id: 2, x: 100, y: 100 },
+            { id: 3, x: 140, y: 100 },
+            { id: 4, x: 180, y: 130 },
+            { id: 5, x: 250, y: 130 },
+            { id: 6, x: 310, y: 170 },
+            { id: 7, x: 340, y: 170 },
+            { id: 8, x: 340, y: 210 },
+            { id: 9, x: 280, y: 210 },
+            { id: 10, x: 220, y: 180 },
+            { id: 11, x: 140, y: 180 },
+            { id: 12, x: 80, y: 210 }
+          ]
+        }
+      ],
+      'Animais': [
+        {
+          id: 'dog',
+          name: 'Cachorrinho',
+          emoji: '🐶',
+          color: '#F59E0B',
+          svgPath: "M 130,230 L 110,160 L 80,120 L 130,90 L 180,110 L 230,90 L 280,120 L 250,160 L 230,230 L 180,260 Z",
+          dots: [
+            { id: 1, x: 130, y: 230 },
+            { id: 2, x: 110, y: 160 },
+            { id: 3, x: 80, y: 120 },
+            { id: 4, x: 130, y: 90 },
+            { id: 5, x: 180, y: 110 },
+            { id: 6, x: 230, y: 90 },
+            { id: 7, x: 280, y: 120 },
+            { id: 8, x: 250, y: 160 },
+            { id: 9, x: 230, y: 230 },
+            { id: 10, x: 180, y: 260 }
+          ]
+        }
+      ],
+      'Flores': [
+        {
+          id: 'flower',
+          name: 'Flor do Campo',
+          emoji: '🌼',
+          color: '#EC4899',
+          svgPath: "M 200,60 L 230,110 L 280,90 L 260,140 L 310,160 L 260,180 L 280,230 L 230,210 L 200,260 L 170,210 L 120,230 L 140,180 L 90,160 L 140,140 L 120,90 L 170,110 Z",
+          dots: [
+            { id: 1, x: 200, y: 60 },
+            { id: 2, x: 230, y: 110 },
+            { id: 3, x: 280, y: 90 },
+            { id: 4, x: 260, y: 140 },
+            { id: 5, x: 310, y: 160 },
+            { id: 6, x: 260, y: 180 },
+            { id: 7, x: 280, y: 230 },
+            { id: 8, x: 230, y: 210 },
+            { id: 9, x: 200, y: 260 },
+            { id: 10, x: 170, y: 210 },
+            { id: 11, x: 120, y: 230 },
+            { id: 12, x: 140, y: 180 },
+            { id: 13, x: 90, y: 160 },
+            { id: 14, x: 140, y: 140 },
+            { id: 15, x: 120, y: 90 },
+            { id: 16, x: 170, y: 110 }
+          ]
+        }
+      ],
+      'Frutas & Legumes': [
+        {
+          id: 'apple',
+          name: 'Maçã',
+          emoji: '🍎',
+          color: '#EF4444',
+          svgPath: "M 200,90 L 240,75 L 285,110 L 290,170 L 260,235 L 200,270 L 140,235 L 110,170 L 115,110 L 160,75 Z",
+          dots: [
+            { id: 1, x: 200, y: 90 },
+            { id: 2, x: 240, y: 75 },
+            { id: 3, x: 285, y: 110 },
+            { id: 4, x: 290, y: 170 },
+            { id: 5, x: 260, y: 235 },
+            { id: 6, x: 200, y: 270 },
+            { id: 7, x: 140, y: 235 },
+            { id: 8, x: 110, y: 170 },
+            { id: 9, x: 115, y: 110 },
+            { id: 10, x:
