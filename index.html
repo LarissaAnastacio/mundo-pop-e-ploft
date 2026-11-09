@@ -15,11 +15,28 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- SISTEMA DE SÍNTESE SONORA E SONS DE ANIMAIS (FIÉIS AOS ÁUDIOS) ---
+    // --- BANCO DE SONS REAIS DE ANIMAIS (URLS PUBLICAS DE AUDIO) ---
+    const ANIMAL_AUDIO_URLS = {
+      coruja: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_73238615b1.mp3',
+      macaco: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_27606e3921.mp3',
+      porco: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_c89b4f91ef.mp3',
+      pato: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c2bf8db618.mp3',
+      ovelha: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_3389429731.mp3',
+      galo: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3',
+      elefante: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8236bd8e15.mp3',
+      leao: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_5179fb7534.mp3',
+      cachorro: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_0576392095.mp3',
+      gato: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_c187fca068.mp3',
+      vaca: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_18c5e62f01.mp3',
+      cavalo: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_b2f9f8e434.mp3'
+    };
+
+    // --- SISTEMA DE EFEITOS SONOROS GERAIS ---
     class SensoryAudio {
       constructor() {
         this.ctx = null;
         this.isMuted = false;
+        this.currentAudio = null;
       }
 
       init() {
@@ -77,93 +94,27 @@
         });
       }
 
-      // SINTETIZADOR DOS AUDIOS DOS ANIMAIS
-      playAnimalSound(type) {
+      // REPRODUÇÃO REAL DE ÁUDIO DO ANIMAL
+      playAnimalRealSound(animalKey) {
         if (this.isMuted) return;
-        this.init();
-        
-        switch (type) {
-          case 'coruja':
-            // Som suave uuu (suave e grave caindo de tom)
-            this.playTone(380, 'sine', 0.4, 0.18);
-            setTimeout(() => this.playTone(320, 'sine', 0.5, 0.15), 350);
-            break;
-
-          case 'macaco':
-            // Risadinhas e guinchos rápidos
-            for (let i = 0; i < 5; i++) {
-              setTimeout(() => {
-                this.playTone(650 + (i % 2 === 0 ? 200 : 0), 'sine', 0.1, 0.15);
-              }, i * 90);
-            }
-            break;
-
-          case 'porco':
-            // Ronco característico em onda quadrada
-            this.playTone(160, 'square', 0.15, 0.2);
-            setTimeout(() => this.playTone(140, 'square', 0.15, 0.2), 140);
-            setTimeout(() => this.playTone(170, 'square', 0.18, 0.2), 280);
-            break;
-
-          case 'pato':
-            // Quack fanhoso
-            this.playTone(320, 'sawtooth', 0.14, 0.18);
-            setTimeout(() => this.playTone(290, 'sawtooth', 0.14, 0.18), 130);
-            break;
-
-          case 'ovelha':
-            // Mééé vibrante
-            this.playTone(240, 'sawtooth', 0.5, 0.2);
-            setTimeout(() => this.playTone(220, 'sawtooth', 0.4, 0.18), 150);
-            break;
-
-          case 'galo':
-            // Cocoricó em escala crescente
-            this.playTone(450, 'sine', 0.2, 0.15);
-            setTimeout(() => this.playTone(600, 'sine', 0.25, 0.2), 180);
-            setTimeout(() => this.playTone(780, 'sine', 0.5, 0.25), 380);
-            break;
-
-          case 'elefante':
-            // Agudo de tromba rasgada
-            this.playTone(520, 'sawtooth', 0.7, 0.25);
-            setTimeout(() => this.playTone(620, 'sawtooth', 0.5, 0.2), 200);
-            break;
-
-          case 'leao':
-            // Rugido grave e constante
-            this.playTone(85, 'sawtooth', 0.9, 0.3);
-            setTimeout(() => this.playTone(70, 'sawtooth', 0.6, 0.25), 300);
-            break;
-
-          case 'cachorro':
-            // Au Au duplo
-            this.playTone(280, 'sawtooth', 0.15, 0.2);
-            setTimeout(() => this.playTone(320, 'sawtooth', 0.15, 0.2), 180);
-            break;
-
-          case 'gato':
-            // Miau suave subindo e caindo
-            this.playTone(550, 'sine', 0.25, 0.15);
-            setTimeout(() => this.playTone(430, 'sine', 0.35, 0.15), 200);
-            break;
-
-          case 'vaca':
-            // Muuuu sustentado e grave
-            this.playTone(130, 'triangle', 1.1, 0.25);
-            break;
-
-          case 'cavalo':
-            // Relincho rápido
-            for (let i = 0; i < 4; i++) {
-              setTimeout(() => {
-                this.playTone(580 - (i * 70), 'sawtooth', 0.1, 0.15);
-              }, i * 60);
-            }
-            break;
-
-          default:
+        try {
+          if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+          }
+          const url = ANIMAL_AUDIO_URLS[animalKey];
+          if (url) {
+            this.currentAudio = new Audio(url);
+            this.currentAudio.volume = 0.6;
+            this.currentAudio.play().catch(() => {
+              // Fallback caso a política do navegador exija interação direta
+              this.playPop(1.5);
+            });
+          } else {
             this.playPop();
+          }
+        } catch (e) {
+          this.playPop();
         }
       }
     }
@@ -759,7 +710,7 @@
         }
       };
 
-      // --- SONS DOS ANIMAIS (LISTA COMPLETA DOS AUDIOS) ---
+      // --- SONS DOS ANIMAIS (COM AUDIOS REAIS) ---
       const animalSoundsList = [
         { id: 'coruja', name: 'Coruja', emoji: '🦉', soundText: 'Uuuu Uuuu' },
         { id: 'macaco', name: 'Macaco', emoji: '🐵', soundText: 'Uh Uh Ah Ah' },
@@ -778,8 +729,9 @@
 
       const triggerAnimalSound = (animal) => {
         setActiveAnimalSound(animal);
-        audioSystem.playAnimalSound(animal.id);
-        setTimeout(() => setActiveAnimalSound(null), 1200);
+        // Toca o áudio real do animal
+        audioSystem.playAnimalRealSound(animal.id);
+        setTimeout(() => setActiveAnimalSound(null), 1500);
       };
 
       useEffect(() => {
@@ -892,7 +844,7 @@
                     >
                       <div className="text-4xl mb-3">🔊</div>
                       <h2 className="text-xl font-bold mb-1">Sons dos Animais</h2>
-                      <p className="text-sm opacity-75">Ouça o som da coruja, macaco, porco, pato, ovelha, galo e leão!</p>
+                      <p className="text-sm opacity-75">Ouça o som real da coruja, macaco, porco, pato, ovelha, galo e leão!</p>
                     </button>
 
                     <button 
@@ -1000,12 +952,12 @@
                 </div>
               )}
 
-              {/* MÓDULO SONS DOS ANIMAIS (COM OS AUDIOS COMPLETO) */}
+              {/* MÓDULO SONS DOS ANIMAIS (COM AUDIOS REAIS) */}
               {activeModule === 'animal-sounds' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div>
                     <h2 className="text-2xl font-bold">🔊 Sons dos Animais</h2>
-                    <p className="text-sm opacity-75">Clique em cada animal para ouvir o som que ele faz!</p>
+                    <p className="text-sm opacity-75">Clique em cada animal para ouvir o som real que ele faz!</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -1016,7 +968,7 @@
                         <button
                           key={animal.id}
                           onClick={() => triggerAnimalSound(animal)}
-                          className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center gap-2 select-none ${
+                          className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center gap-2 select-none cursor-pointer ${
                             isActive 
                               ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-xl ring-4 ring-emerald-300' 
                               : 'border-slate-100 bg-white hover:border-emerald-200 hover:scale-102 shadow-sm'
