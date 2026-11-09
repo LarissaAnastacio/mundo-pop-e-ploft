@@ -15,7 +15,7 @@
 <body class="bg-amber-50 text-slate-800 font-sans">
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
     const { useState, useEffect, useRef } = React;
 
     // --- SÍNTESE ACÚSTICA PARA SONS DE ANIMAIS E EFEITOS ---
@@ -78,16 +78,6 @@
             this.playTone(freq, 'sine', 0.4, 0.08);
           }, index * 90);
         });
-      }
-
-      createNoiseBuffer(duration = 1.0) {
-        const bufferSize = this.ctx.sampleRate * duration;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        return buffer;
       }
 
       playOrganicAnimalSound(type) {
@@ -203,7 +193,7 @@
 
     const audioSystem = new OrganicAnimalAudio();
 
-    // --- BANCO DE DADOS PARA COMPLETE A FRASE ---
+    // DADOS COMPLETE A FRASE
     const fillSentenceData = [
       {
         id: 1,
@@ -234,20 +224,10 @@
           { text: "Correr", icon: "🏃", isCorrect: false },
           { text: "Desenhar", icon: "🎨", isCorrect: false }
         ]
-      },
-      {
-        id: 4,
-        sentencePrefix: "Quando está sol, a ",
-        sentenceSuffix: " cresce no jardim.",
-        options: [
-          { text: "Bola", icon: "⚽", isCorrect: false },
-          { text: "Flor", icon: "🌼", isCorrect: true },
-          { text: "Mochila", icon: "🎒", isCorrect: false }
-        ]
       }
     ];
 
-    // --- BANCO DE DADOS PARA COMO PEDIR AJUDA ---
+    // DADOS COMO PEDIR AJUDA
     const helpTasksData = [
       {
         id: 'shoes',
@@ -268,36 +248,6 @@
           { text: '"Pode pegar a pasta de dentes para mim?"', icon: '🙋‍♂️', isHelpful: true, tip: 'Muito bem! Apontar ou pedir gentilmente funciona super bem!' },
           { text: 'Tentar subir em um lugar perigoso sozinho', icon: '⚠️', isHelpful: false, tip: 'Cuidado! Sempre peça para um adulto alcançar objetos altos.' }
         ]
-      },
-      {
-        id: 'food',
-        title: 'Quer Comer Algo',
-        icon: '🍎',
-        prompt: 'Quando estiver com fome e quiser um lanche gostoso:',
-        options: [
-          { text: '"Estou com fome, podemos fazer um lanche?"', icon: '🍽️', isHelpful: true, tip: 'Perfeito! Mostrar a figura do lanche ou falar ajuda bastante.' },
-          { text: 'Chorar sem explicar o que quer', icon: '😢', isHelpful: false, tip: 'Se você mostrar o cartão da comida, as pessoas vão entender rapidinho!' }
-        ]
-      },
-      {
-        id: 'clothes',
-        title: 'Vestir a Roupa',
-        icon: '👕',
-        prompt: 'Se a blusa ficou presa na cabeça ao se vestir:',
-        options: [
-          { text: '"Ajuda a colocar a blusa?"', icon: '🤲', isHelpful: true, tip: 'Boa! Estender os braços e pedir ajuda facilita tudo!' },
-          { text: 'Puxar com força e rasgar a roupa', icon: '⚡', isHelpful: false, tip: 'Calma! Peça ajuda para puxar a blusa devagar.' }
-        ]
-      },
-      {
-        id: 'out',
-        title: 'Sair para Passear',
-        icon: '🌳',
-        prompt: 'Quando quiser ir ao parque ou passear na rua:',
-        options: [
-          { text: '"Podemos ir ao parque hoje?"', icon: '🛝', isHelpful: true, tip: 'Ótimo! Pegar no sapato ou mostrar o parque ajuda a combinar a saída.' },
-          { text: 'Abrir a porta e sair correndo sozinho', icon: '🚫', isHelpful: false, tip: 'Segurança em primeiro lugar! Sempre dê a mão para um adulto ao sair.' }
-        ]
       }
     ];
 
@@ -308,33 +258,6 @@
       { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miado' }
     ];
 
-    const dotToDotData = {
-      'Carros & Motos': [
-        {
-          id: 'car',
-          name: 'Carro Esporte',
-          emoji: '🚗',
-          color: '#EF4444',
-          svgPath: "M 40,160 L 70,160 L 90,110 L 170,80 L 250,80 L 300,110 L 350,160 L 370,160 L 370,200 L 350,210 L 320,210 L 300,190 L 260,190 L 240,210 L 130,210 L 110,190 L 70,190 L 50,210 L 40,200 Z",
-          dots: [
-            { id: 1, x: 40, y: 160 }, { id: 2, x: 70, y: 160 }, { id: 3, x: 90, y: 110 },
-            { id: 4, x: 170, y: 80 }, { id: 5, x: 250, y: 80 }, { id: 6, x: 300, y: 110 },
-            { id: 7, x: 350, y: 160 }, { id: 8, x: 370, y: 160 }, { id: 9, x: 370, y: 200 },
-            { id: 10, x: 350, y: 210 }, { id: 11, x: 250, y: 210 }, { id: 12, x: 130, y: 210 }, { id: 13, x: 40, y: 200 }
-          ]
-        }
-      ]
-    };
-
-    const memoryPool = [
-      { id: 'cavalo', name: 'Cavalo', icon: '🐴', color: 'bg-amber-100 border-amber-300' },
-      { id: 'carro', name: 'Carro', icon: '🚗', color: 'bg-red-100 border-red-300' },
-      { id: 'flor', name: 'Flor', icon: '🌸', color: 'bg-pink-100 border-pink-300' },
-      { id: 'gato', name: 'Gato', icon: '🐱', color: 'bg-orange-100 border-orange-300' }
-    ];
-
-    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-
     function App() {
       const [supportLevel, setSupportLevel] = useState(2);
       const [themeMode, setThemeMode] = useState('pastel');
@@ -342,7 +265,7 @@
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
 
-      // --- ESTADOS DO JOGO COMPLETE A FRASE ---
+      // COMPLETE A FRASE
       const [sentenceIndex, setSentenceIndex] = useState(0);
       const [selectedOption, setSelectedOption] = useState(null);
       const [sentenceFeedback, setSentenceFeedback] = useState(null);
@@ -366,7 +289,7 @@
         setSentenceIndex((prev) => (prev + 1) % fillSentenceData.length);
       };
 
-      // --- ESTADOS DO JOGO COMO PEDIR AJUDA ---
+      // COMO PEDIR AJUDA
       const [taskIndex, setTaskIndex] = useState(0);
       const [helpFeedback, setHelpFeedback] = useState(null);
 
@@ -387,7 +310,7 @@
         setTaskIndex((prev) => (prev + 1) % helpTasksData.length);
       };
 
-      // --- ESTADOS DA LOUSA MÁGICA (DESENHO LIVRE) ---
+      // LOUSA MÁGICA
       const canvasRef = useRef(null);
       const [isDrawing, setIsDrawing] = useState(false);
       const [brushColor, setBrushColor] = useState('#4F46E5');
@@ -448,19 +371,6 @@
         audioSystem.playPop(1.3);
       };
 
-      // --- DEMAIS MÓDULOS ---
-      const [bubbles, setBubbles] = useState([]);
-      useEffect(() => {
-        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
-          id: Date.now() + i,
-          x: 10 + (i * 11) % 80,
-          y: 20 + (i * 15) % 60,
-          size: 70 + (i % 3) * 20,
-          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
-        }));
-        setBubbles(initialBubbles);
-      }, []);
-
       const getThemeClass = () => {
         if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
         if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
@@ -500,7 +410,7 @@
                 )}
                 <button 
                   onClick={() => setIsMuted(!isMuted)}
-                  className="p-3 rounded-xl border font-semibold transition"
+                  className="p-3 rounded-xl border font-semibold transition text-slate-800"
                 >
                   {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
                 </button>
@@ -517,9 +427,7 @@
               {/* HOMEPAGE */}
               {activeModule === 'home' && (
                 <div className="space-y-8">
-                  <div 
-                    className={`relative overflow-hidden min-h-[180px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
-                  >
+                  <div className={`relative overflow-hidden min-h-[180px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center select-none`}>
                     <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
                       Mundo Pop! & Ploft!
                     </h1>
@@ -535,4 +443,164 @@
                     >
                       <div className="text-4xl mb-3">✍️</div>
                       <h2 className="text-xl font-bold mb-1">Complete a Frase</h2>
-                      <p className="text-sm opacity-75">Escolha a imagem corre
+                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('how-to-help')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-teal-400`}
+                    >
+                      <div className="text-4xl mb-3">🤝</div>
+                      <h2 className="text-xl font-bold mb-1">Como Pedir Ajuda</h2>
+                      <p className="text-sm opacity-75">Aprenda a pedir ajuda para tênis, dentes, lanches e passeios!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('drawing-board')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-rose-400`}
+                    >
+                      <div className="text-4xl mb-3">🎨</div>
+                      <h2 className="text-xl font-bold mb-1">Lousa Mágica (Desenho)</h2>
+                      <p className="text-sm opacity-75">Desenhe o que vier na sua imaginação com cores e pincéis!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('animal-sounds')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
+                    >
+                      <div className="text-4xl mb-3">🔊</div>
+                      <h2 className="text-xl font-bold mb-1">Sons dos Animais</h2>
+                      <p className="text-sm opacity-75">Toque nos animais para ouvir o som real de cada um!</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* MÓDULO 1: COMPLETE A FRASE */}
+              {activeModule === 'fill-sentence' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">✍️ Complete a Frase</h2>
+                    <span className="text-sm font-bold bg-violet-100 text-violet-800 px-3 py-1 rounded-xl">
+                      Frase {sentenceIndex + 1} de {fillSentenceData.length}
+                    </span>
+                  </div>
+
+                  <div className="p-6 bg-slate-50 border-4 border-dashed border-violet-200 rounded-3xl text-center">
+                    <p className="text-2xl md:text-3xl font-black text-slate-800 leading-relaxed">
+                      {currentSentence.sentencePrefix}
+                      <span className="inline-block mx-2 px-4 py-1 bg-white border-b-4 border-violet-500 rounded-xl min-w-[120px] text-violet-600 shadow-inner">
+                        {selectedOption ? `${selectedOption.icon} ${selectedOption.text}` : '_______'}
+                      </span>
+                      {currentSentence.sentenceSuffix}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {currentSentence.options.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSelectOption(opt)}
+                        className={`p-6 rounded-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all ${
+                          selectedOption?.text === opt.text
+                            ? opt.isCorrect
+                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-lg'
+                              : 'border-red-500 bg-red-50 scale-95'
+                            : 'border-slate-200 bg-white hover:border-violet-300 hover:scale-102 shadow-sm'
+                        }`}
+                      >
+                        <span className="text-5xl">{opt.icon}</span>
+                        <span className="font-bold text-lg text-slate-800">{opt.text}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {sentenceFeedback === 'success' && (
+                    <div className="p-5 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center space-y-3">
+                      <div className="text-4xl animate-bounce">🎉</div>
+                      <h3 className="text-2xl font-black text-emerald-900">Muito bem! Você completou certinho!</h3>
+                      <button 
+                        onClick={nextSentence}
+                        className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
+                      >
+                        Próxima Frase ➡️
+                      </button>
+                    </div>
+                  )}
+
+                  {sentenceFeedback === 'error' && (
+                    <div className="p-5 bg-rose-100 border-2 border-rose-400 rounded-2xl text-center space-y-2">
+                      <div className="text-4xl">🤔</div>
+                      <h3 className="text-xl font-bold text-rose-900">Ops! Essa palavra não se encaixa bem aqui.</h3>
+                      <p className="text-sm text-rose-700">Tente escolher outra opção para completar a frase!</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MÓDULO 2: COMO PEDIR AJUDA */}
+              {activeModule === 'how-to-help' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">🤝 Aprendendo a Pedir Ajuda</h2>
+                    <span className="text-sm font-bold bg-teal-100 text-teal-800 px-3 py-1 rounded-xl">
+                      Situação {taskIndex + 1} de {helpTasksData.length}
+                    </span>
+                  </div>
+
+                  <div className="p-6 bg-teal-50 border-2 border-teal-200 rounded-3xl space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-4xl">{currentHelpTask.icon}</span>
+                      <h3 className="text-xl font-black text-teal-900">{currentHelpTask.title}</h3>
+                    </div>
+                    <p className="text-lg font-bold text-slate-700">{currentHelpTask.prompt}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {currentHelpTask.options.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleHelpOptionClick(opt)}
+                        className={`p-6 rounded-2xl border-4 text-left flex items-start gap-4 transition-all ${
+                          opt.isHelpful 
+                            ? 'bg-white border-teal-200 hover:border-teal-400 hover:scale-[1.01]' 
+                            : 'bg-white border-slate-200 hover:border-amber-300'
+                        }`}
+                      >
+                        <span className="text-4xl">{opt.icon}</span>
+                        <div>
+                          <p className="font-bold text-base text-slate-800">{opt.text}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {helpFeedback && (
+                    <div className={`p-5 rounded-2xl border-2 text-center space-y-3 ${
+                      helpFeedback.type === 'success' 
+                        ? 'bg-emerald-100 border-emerald-400 text-emerald-900' 
+                        : 'bg-amber-100 border-amber-400 text-amber-900'
+                    }`}>
+                      <div className="text-3xl">{helpFeedback.type === 'success' ? '🌟' : '💡'}</div>
+                      <p className="text-lg font-bold">{helpFeedback.tip}</p>
+                      <button 
+                        onClick={nextHelpTask}
+                        className={`px-6 py-2.5 font-bold text-white rounded-xl transition ${
+                          helpFeedback.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'
+                        }`}
+                      >
+                        Próxima Situação ➡️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MÓDULO 3: LOUSA MÁGICA */}
+              {activeModule === 'drawing-board' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-4`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold">🎨 Lousa Mágica (Desenho Livre)</h2>
+
+                    <div className="flex flex-wrap items-center gap-3 bg-slate-100 p-2 rounded-2xl">
+                      <div className="flex gap-
