@@ -139,7 +139,7 @@
 
     const audioSystem = new SensoryAudio();
 
-    // --- BANCO DE DESENHOS PRECISOS PARA O LIGUE OS PONTOS ---
+    // --- BANCO DE DESENHOS PARA O LIGUE OS PONTOS ---
     const dotToDotData = {
       'Carros & Motos': [
         {
@@ -257,7 +257,7 @@
       ]
     };
 
-    // --- BANCO DE DADOS PARA COMPLETE A FRASE ---
+    // --- BANCO DE DADOS COMPLETE A FRASE ---
     const fillSentenceData = [
       {
         id: 1,
@@ -301,61 +301,61 @@
       }
     ];
 
-    // --- BANCO DE DADOS PARA COMO PEDIR AJUDA ---
+    // --- BANCO DE DADOS COMO PEDIR AJUDA (SOMENTE OPÇÕES POSITIVAS DE APOIO) ---
     const helpTasksData = [
       {
         id: 'shoes',
         title: 'Amarrar o Tênis',
         icon: '👟',
-        prompt: 'Quando você não consegue amarrar os cadarços, o que pode fazer?',
+        prompt: 'Quando você não consegue amarrar os cadarços, qual a melhor forma de pedir ajuda?',
         options: [
-          { text: '"Pode me ajudar a amarrar o tênis, por favor?"', icon: '💬', isHelpful: true, tip: 'Excelente! Pedir com gentileza ajuda o adulto a entender você.' },
-          { text: 'Ficar bravo e jogar o tênis no chão', icon: '😠', isHelpful: false, tip: 'Respire fundo! Tente usar as palavras para pedir ajuda.' }
+          { text: '"Pode me ajudar a amarrar o tênis, por favor?"', icon: '💬', tip: 'Perfeito! Usar palavras gentis ajuda o adulto a entender exatamente o que você precisa.' },
+          { text: 'Aproximar-se do adulto e apontar com calma para o tênis', icon: '👉', tip: 'Muito bem! Apontar para o sapato é uma forma simples e clara de pedir apoio.' }
         ]
       },
       {
         id: 'teeth',
         title: 'Escovar os Dentes',
         icon: '🪥',
-        prompt: 'Se a pasta de dentes está no alto e você não alcança:',
+        prompt: 'Se a pasta de dentes está em um lugar alto e você não alcança:',
         options: [
-          { text: '"Pode pegar a pasta de dentes para mim?"', icon: '🙋‍♂️', isHelpful: true, tip: 'Muito bem! Apontar ou pedir gentilmente funciona super bem!' },
-          { text: 'Tentar subir em um lugar perigoso sozinho', icon: '⚠️', isHelpful: false, tip: 'Cuidado! Sempre peça para um adulto alcançar objetos altos.' }
+          { text: '"Pode pegar a pasta de dentes para mim?"', icon: '🙋‍♂️', tip: 'Excelente! Falar com o adulto garante que você pegue a pasta com total segurança.' },
+          { text: 'Chamar um responsável e mostrar o escovário', icon: '🤝', tip: 'Ótima atitude! Mostrar o local é super eficiente para conseguir ajuda rápido.' }
         ]
       },
       {
         id: 'food',
         title: 'Quer Comer Algo',
         icon: '🍎',
-        prompt: 'Quando estiver com fome e quiser um lanche gostoso:',
+        prompt: 'Quando estiver com fome e quiser fazer um lanche gostoso:',
         options: [
-          { text: '"Estou com fome, podemos fazer um lanche?"', icon: '🍽️', isHelpful: true, tip: 'Perfeito! Mostrar a figura do lanche ou falar ajuda bastante.' },
-          { text: 'Chorar sem explicar o que quer', icon: '😢', isHelpful: false, tip: 'Se você mostrar o cartão da comida, as pessoas vão entender rapidinho!' }
+          { text: '"Estou com fome, podemos preparar um lanche?"', icon: '🍽️', tip: 'Perfeito! Expressar a fome com clareza ajuda a escolherem o lanche juntos.' },
+          { text: 'Mostrar o cartão visual da comida ou apontar para a fruta', icon: '🍌', tip: 'Muito bem! Fichas e imagens visuais facilitam a comunicação de todos.' }
         ]
       },
       {
         id: 'clothes',
         title: 'Vestir a Roupa',
         icon: '👕',
-        prompt: 'Se a blusa ficou presa na cabeça ao se vestir:',
+        prompt: 'Se a blusa ficou presa ou difícil de colocar sozinho:',
         options: [
-          { text: '"Ajuda a colocar a blusa?"', icon: '🤲', isHelpful: true, tip: 'Boa! Estender os braços e pedir ajuda facilita tudo!' },
-          { text: 'Puxar com força e rasgar a roupa', icon: '⚡', isHelpful: false, tip: 'Calma! Peça ajuda para puxar a blusa devagar.' }
+          { text: '"Você pode me ajudar a vestir a blusa?"', icon: '🤲', tip: 'Muito bem! Pedir ajuda com a roupa deixa o momento mais tranquilo.' },
+          { text: 'Estender os braços devagar e aguardar o apoio', icon: '👕', tip: 'Excelente! Sinalizar com os braços mostra que você está pronto para o auxílio.' }
         ]
       },
       {
         id: 'out',
         title: 'Sair para Passear',
         icon: '🌳',
-        prompt: 'Quando quiser ir ao parque ou passear na rua:',
+        prompt: 'Quando você quiser ir ao parque ou passear na rua:',
         options: [
-          { text: '"Podemos ir ao parque hoje?"', icon: '🛝', isHelpful: true, tip: 'Ótimo! Pegar no sapato ou mostrar o parque ajuda a combinar a saída.' },
-          { text: 'Abrir a porta e sair correndo sozinho', icon: '🚫', isHelpful: false, tip: 'Segurança em primeiro lugar! Sempre dê a mão para um adulto ao sair.' }
+          { text: '"Podemos ir passear no parque hoje?"', icon: '🛝', tip: 'Ótimo! Combinar o passeio antes é a melhor maneira de se preparar.' },
+          { text: 'Pegar os calçados e mostrar para o adulto', icon: '👟', tip: 'Muito legal! Pegar o sapato mostra que você quer passear com segurança.' }
         ]
       }
     ];
 
-    // --- ELEMENTOS DIVERSOS PARA O JOGO DA MEMÓRIA ---
+    // --- JOGO DA MEMÓRIA ---
     const memoryPool = [
       { id: 'cavalo', name: 'Cavalo', icon: '🐴', color: 'bg-amber-100 border-amber-300' },
       { id: 'carro', name: 'Carro', icon: '🚗', color: 'bg-red-100 border-red-300' },
@@ -378,9 +378,29 @@
       const [reduceMotion, setReduceMotion] = useState(false);
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
-      const [selectedCategory, setSelectedCategory] = useState('Todos');
 
-      // --- ESTADOS DO JOGO COMPLETE A FRASE ---
+      // --- ESTADOS DO JOGO DAS BOLHAS SENSORIAIS (POP-IT) ---
+      const [gridBubbles, setGridBubbles] = useState([]);
+      const initPopItGrid = () => {
+        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
+        const newGrid = Array.from({ length: 24 }).map((_, i) => ({
+          id: i,
+          popped: false,
+          color: colors[i % colors.length]
+        }));
+        setGridBubbles(newGrid);
+      };
+
+      useEffect(() => {
+        initPopItGrid();
+      }, []);
+
+      const handleGridBubblePop = (id) => {
+        audioSystem.playPop(0.9 + Math.random() * 0.4);
+        setGridBubbles(prev => prev.map(b => b.id === id ? { ...b, popped: !b.popped } : b));
+      };
+
+      // --- ESTADOS DE COMPLETE A FRASE ---
       const [sentenceIndex, setSentenceIndex] = useState(0);
       const [selectedOption, setSelectedOption] = useState(null);
       const [sentenceFeedback, setSentenceFeedback] = useState(null);
@@ -404,20 +424,15 @@
         setSentenceIndex((prev) => (prev + 1) % fillSentenceData.length);
       };
 
-      // --- ESTADOS DO JOGO COMO PEDIR AJUDA ---
+      // --- ESTADOS DE COMO PEDIR AJUDA ---
       const [taskIndex, setTaskIndex] = useState(0);
       const [helpFeedback, setHelpFeedback] = useState(null);
 
       const currentHelpTask = helpTasksData[taskIndex];
 
       const handleHelpOptionClick = (option) => {
-        if (option.isHelpful) {
-          setHelpFeedback({ type: 'success', tip: option.tip });
-          audioSystem.playSuccess();
-        } else {
-          setHelpFeedback({ type: 'error', tip: option.tip });
-          audioSystem.playError();
-        }
+        setHelpFeedback({ type: 'success', tip: option.tip });
+        audioSystem.playSuccess();
       };
 
       const nextHelpTask = () => {
@@ -425,7 +440,7 @@
         setTaskIndex((prev) => (prev + 1) % helpTasksData.length);
       };
 
-      // --- ESTADOS DA LOUSA MÁGICA (DESENHO LIVRE) ---
+      // --- ESTADOS DA LOUSA MÁGICA ---
       const canvasRef = useRef(null);
       const [isDrawing, setIsDrawing] = useState(false);
       const [brushColor, setBrushColor] = useState('#4F46E5');
@@ -486,7 +501,7 @@
         audioSystem.playPop(1.3);
       };
 
-      // --- BOLHAS SENSORIAIS ---
+      // --- BOLHAS BANNER HOMEPAGE ---
       const [bubbles, setBubbles] = useState([]);
       useEffect(() => {
         const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
@@ -525,7 +540,7 @@
       ];
 
       const [currentDay, setCurrentDay] = useState('Segunda');
-      const [routineTab, setRoutineTab] = useState('today'); // 'today' ou 'history'
+      const [routineTab, setRoutineTab] = useState('today');
       const [weeklyRoutines, setWeeklyRoutines] = useState(() => {
         const initialMap = {};
         weekDays.forEach(day => {
@@ -580,7 +595,6 @@
       const initPuzzle = () => {
         const total = puzzleSize * puzzleSize;
         let arr = Array.from({ length: total }, (_, i) => i);
-        // Embaralhar
         for (let i = arr.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -600,7 +614,6 @@
         if (selectedPieceIndex === null) {
           setSelectedPieceIndex(index);
         } else {
-          // Trocar peças
           const newPieces = [...puzzlePieces];
           const temp = newPieces[selectedPieceIndex];
           newPieces[selectedPieceIndex] = newPieces[index];
@@ -608,7 +621,6 @@
           setPuzzlePieces(newPieces);
           setSelectedPieceIndex(null);
 
-          // Verificar vitória
           const solved = newPieces.every((val, idx) => val === idx);
           if (solved) {
             setIsPuzzleSolved(true);
@@ -617,14 +629,13 @@
         }
       };
 
-      // --- JOGO DA MEMÓRIA COM DIVERSIDADE DE IMAGENS ---
+      // --- JOGO DA MEMÓRIA ---
       const [memoryCards, setMemoryCards] = useState([]);
       const [flippedCards, setFlippedCards] = useState([]);
       const [matchedCards, setMatchedCards] = useState([]);
       const [memoryMoves, setMemoryMoves] = useState(0);
 
       const initMemoryGame = () => {
-        // Selecionar 8 itens variados da pool
         const shuffledPool = [...memoryPool].sort(() => 0.5 - Math.random()).slice(0, 8);
         const duplicated = [];
         shuffledPool.forEach((item, index) => {
@@ -666,7 +677,7 @@
         }
       };
 
-      // --- SOM DOS ANIMAIS ---
+      // --- SONS DOS ANIMAIS ---
       const animalSoundsList = [
         { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Riiiii-hó!' },
         { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Muuuuu!' },
@@ -689,7 +700,6 @@
         setTimeout(() => setActiveAnimalSound(null), 1200);
       };
 
-      // --- AJUSTES DE TEMA E BOLHAS ---
       useEffect(() => {
         audioSystem.isMuted = isMuted;
       }, [isMuted]);
@@ -802,12 +812,21 @@
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <button 
+                      onClick={() => setActiveModule('pop-it')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
+                    >
+                      <div className="text-4xl mb-3">🫧</div>
+                      <h2 className="text-xl font-bold mb-1">Pop! Bolhas Sensoriais</h2>
+                      <p className="text-sm opacity-75">Estoure bolinhas virtuais e sinta um relaxamento sensorial incrível!</p>
+                    </button>
+
+                    <button 
                       onClick={() => setActiveModule('fill-sentence')}
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-violet-400`}
                     >
                       <div className="text-4xl mb-3">✍️</div>
-                      <h2 className="text-xl font-bold mb-1">1. Complete a Frase</h2>
-                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história!</p>
+                      <h2 className="text-xl font-bold mb-1">Complete a Frase</h2>
+                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história com festa!</p>
                     </button>
 
                     <button 
@@ -815,8 +834,8 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-teal-400`}
                     >
                       <div className="text-4xl mb-3">🤝</div>
-                      <h2 className="text-xl font-bold mb-1">2. Como Pedir Ajuda</h2>
-                      <p className="text-sm opacity-75">Aprenda a pedir ajuda para tênis, dentes, lanches e passeios!</p>
+                      <h2 className="text-xl font-bold mb-1">Como Pedir Ajuda</h2>
+                      <p className="text-sm opacity-75">Aprenda boas formas de pedir apoio para tênis, dentes e comida!</p>
                     </button>
 
                     <button 
@@ -824,7 +843,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-rose-400`}
                     >
                       <div className="text-4xl mb-3">🎨</div>
-                      <h2 className="text-xl font-bold mb-1">3. Lousa Mágica (Desenho)</h2>
+                      <h2 className="text-xl font-bold mb-1">Lousa Mágica (Desenho)</h2>
                       <p className="text-sm opacity-75">Desenhe o que vier na sua imaginação com cores e pincéis!</p>
                     </button>
 
@@ -833,8 +852,8 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-indigo-400`}
                     >
                       <div className="text-4xl mb-3">✏️</div>
-                      <h2 className="text-xl font-bold mb-1">4. Ligue os Pontos</h2>
-                      <p className="text-sm opacity-75">Carros, motos, animais, flores e frutas com traços realistas e divertidos!</p>
+                      <h2 className="text-xl font-bold mb-1">Ligue os Pontos</h2>
+                      <p className="text-sm opacity-75">Carros, motos, animais e flores com traços realistas!</p>
                     </button>
 
                     <button 
@@ -842,7 +861,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-blue-400`}
                     >
                       <div className="text-4xl mb-3">🧩</div>
-                      <h2 className="text-xl font-bold mb-1">5. Quebra-Cabeça</h2>
+                      <h2 className="text-xl font-bold mb-1">Quebra-Cabeça</h2>
                       <p className="text-sm opacity-75">Monte imagens interativas ajustando a dificuldade.</p>
                     </button>
 
@@ -851,8 +870,8 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-amber-400`}
                     >
                       <div className="text-4xl mb-3">🎴</div>
-                      <h2 className="text-xl font-bold mb-1">6. Jogo da Memória</h2>
-                      <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos super variados!</p>
+                      <h2 className="text-xl font-bold mb-1">Jogo da Memória</h2>
+                      <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos variados!</p>
                     </button>
 
                     <button 
@@ -860,8 +879,8 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
                     >
                       <div className="text-4xl mb-3">🔊</div>
-                      <h2 className="text-xl font-bold mb-1">7. Sons dos Animais</h2>
-                      <p className="text-sm opacity-75">Toque nos animais para ouvir o relincho, mugido, miado e latido!</p>
+                      <h2 className="text-xl font-bold mb-1">Sons dos Animais</h2>
+                      <p className="text-sm opacity-75">Toque nos animais para ouvir o relincho, mugido e miado!</p>
                     </button>
 
                     <button 
@@ -869,8 +888,8 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
                     >
                       <div className="text-4xl mb-3">📅</div>
-                      <h2 className="text-xl font-bold mb-1">8. Minha Rotina Semanal</h2>
-                      <p className="text-sm opacity-75">Acompanhamento diário de Segunda a Domingo com Histórico completo.</p>
+                      <h2 className="text-xl font-bold mb-1">Minha Rotina Semanal</h2>
+                      <p className="text-sm opacity-75">Acompanhamento diário de Segunda a Domingo com Histórico.</p>
                     </button>
 
                     <button 
@@ -878,9 +897,43 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
                     >
                       <div className="text-4xl mb-3">😊</div>
-                      <h2 className="text-xl font-bold mb-1">9. Expressar Sentimentos</h2>
+                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
                       <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo.</p>
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* MÓDULO POP! BOLHAS SENSORIAIS (POP-IT) */}
+              {activeModule === 'pop-it' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6 text-center`}>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">🫧 Pop! Bolhas Sensoriais</h2>
+                    <button 
+                      onClick={initPopItGrid}
+                      className="px-4 py-2 bg-pink-500 text-white font-bold rounded-xl hover:bg-pink-600 transition"
+                    >
+                      🔄 Desestourar Todas
+                    </button>
+                  </div>
+
+                  <p className="text-slate-600 font-semibold">Toque nas bolinhas para estourar! Sinta o som relaxante de cada pop.</p>
+
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 max-w-xl mx-auto p-6 bg-pink-50/50 border-4 border-dashed border-pink-200 rounded-3xl">
+                    {gridBubbles.map((bubble) => (
+                      <button
+                        key={bubble.id}
+                        onClick={() => handleGridBubblePop(bubble.id)}
+                        style={{ backgroundColor: bubble.popped ? '#CBD5E1' : bubble.color }}
+                        className={`aspect-square rounded-full border-4 border-white shadow-md transition-all flex items-center justify-center text-xl select-none ${
+                          bubble.popped 
+                            ? 'scale-90 shadow-inner opacity-60 inset-shadow' 
+                            : 'hover:scale-110 active:scale-95 shadow-lg'
+                        }`}
+                      >
+                        {bubble.popped ? '🫧' : '✨'}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -970,11 +1023,7 @@
                       <button
                         key={idx}
                         onClick={() => handleHelpOptionClick(opt)}
-                        className={`p-6 rounded-2xl border-4 text-left flex items-start gap-4 transition-all ${
-                          opt.isHelpful 
-                            ? 'bg-white border-teal-200 hover:border-teal-400 hover:scale-[1.01]' 
-                            : 'bg-white border-slate-200 hover:border-amber-300'
-                        }`}
+                        className="p-6 rounded-2xl border-4 text-left flex items-start gap-4 transition-all bg-white border-teal-200 hover:border-teal-400 hover:scale-[1.01]"
                       >
                         <span className="text-4xl">{opt.icon}</span>
                         <div>
@@ -985,18 +1034,12 @@
                   </div>
 
                   {helpFeedback && (
-                    <div className={`p-5 rounded-2xl border-2 text-center space-y-3 ${
-                      helpFeedback.type === 'success' 
-                        ? 'bg-emerald-100 border-emerald-400 text-emerald-900' 
-                        : 'bg-amber-100 border-amber-400 text-amber-900'
-                    }`}>
-                      <div className="text-3xl">{helpFeedback.type === 'success' ? '🌟' : '💡'}</div>
+                    <div className="p-5 rounded-2xl border-2 text-center space-y-3 bg-emerald-100 border-emerald-400 text-emerald-900">
+                      <div className="text-3xl">🌟</div>
                       <p className="text-lg font-bold">{helpFeedback.tip}</p>
                       <button 
                         onClick={nextHelpTask}
-                        className={`px-6 py-2.5 font-bold text-white rounded-xl transition ${
-                          helpFeedback.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'
-                        }`}
+                        className="px-6 py-2.5 font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition"
                       >
                         Próxima Situação ➡️
                       </button>
@@ -1076,7 +1119,7 @@
                 </div>
               )}
 
-              {/* 1. LIGUE OS PONTOS */}
+              {/* LIGUE OS PONTOS */}
               {activeModule === 'dot-to-dot' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1176,7 +1219,7 @@
                 </div>
               )}
 
-              {/* 2. QUEBRA-CABEÇA */}
+              {/* QUEBRA-CABEÇA */}
               {activeModule === 'puzzle' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1256,7 +1299,7 @@
                 </div>
               )}
 
-              {/* 3. JOGO DA MEMÓRIA */}
+              {/* JOGO DA MEMÓRIA */}
               {activeModule === 'memory' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1314,7 +1357,7 @@
                 </div>
               )}
 
-              {/* 4. SOM DOS ANIMAIS */}
+              {/* SONS DOS ANIMAIS */}
               {activeModule === 'animal-sounds' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div>
@@ -1350,7 +1393,7 @@
                 </div>
               )}
 
-              {/* ROTINA SEMANAL E HISTÓRICO */}
+              {/* ROTINA SEMANAL */}
               {activeModule === 'routines' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
