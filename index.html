@@ -4,68 +4,265 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mundo Pop! & Ploft!</title>
-  <!-- React 18 UMD -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Tailwind CSS -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-amber-50 text-slate-800 font-sans">
   <div id="root"></div>
 
-  <script>
-    const { useState, useEffect, useRef, createElement: e } = React;
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-    // --- SÍNTESE ACÚSTICA ---
-    class OrganicAudio {
+    // --- SISTEMA DE SÍNTESE SONORA E SONS DE ANIMAIS ---
+    class SensoryAudio {
       constructor() {
         this.ctx = null;
         this.isMuted = false;
       }
+
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioContext();
         }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
       }
+
       playTone(freq = 440, type = 'sine', duration = 0.3, volume = 0.1) {
         if (this.isMuted) return;
         try {
           this.init();
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
+
           osc.type = type;
           osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
           gain.gain.setValueAtTime(0, this.ctx.currentTime);
           gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
           osc.connect(gain);
           gain.connect(this.ctx.destination);
+
           osc.start();
           osc.stop(this.ctx.currentTime + duration);
-        } catch (err) {}
+        } catch (e) {
+          console.error("Audio error", e);
+        }
       }
-      playPop() { this.playTone(320, 'sine', 0.15, 0.12); }
+
+      playPop(pitchMultiplier = 1) {
+        if (this.isMuted) return;
+        const baseFreq = 320 * pitchMultiplier;
+        this.playTone(baseFreq, 'sine', 0.15, 0.12);
+      }
+
       playError() {
+        if (this.isMuted) return;
         this.playTone(180, 'sawtooth', 0.2, 0.15);
         setTimeout(() => this.playTone(140, 'sawtooth', 0.25, 0.15), 150);
       }
+
       playSuccess() {
-        [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
-          setTimeout(() => this.playTone(f, 'sine', 0.4, 0.08), i * 90);
+        if (this.isMuted) return;
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, index) => {
+          setTimeout(() => {
+            this.playTone(freq, 'sine', 0.4, 0.08);
+          }, index * 90);
         });
+      }
+
+      playAnimalSound(type) {
+        if (this.isMuted) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        switch (type) {
+          case 'cavalo':
+            for (let i = 0; i < 4; i++) {
+              setTimeout(() => {
+                this.playTone(600 - (i * 80), 'sawtooth', 0.1, 0.15);
+              }, i * 60);
+            }
+            break;
+          case 'vaca':
+            this.playTone(130, 'triangle', 0.9, 0.2);
+            break;
+          case 'cachorro':
+            this.playTone(280, 'sawtooth', 0.15, 0.2);
+            setTimeout(() => this.playTone(320, 'sawtooth', 0.15, 0.2), 200);
+            break;
+          case 'gato':
+            this.playTone(550, 'sine', 0.2, 0.15);
+            setTimeout(() => this.playTone(450, 'sine', 0.3, 0.15), 180);
+            break;
+          case 'leao':
+            this.playTone(90, 'sawtooth', 0.8, 0.3);
+            break;
+          case 'elefante':
+            this.playTone(450, 'sawtooth', 0.6, 0.25);
+            break;
+          case 'galo':
+            this.playTone(500, 'sine', 0.2, 0.2);
+            setTimeout(() => this.playTone(750, 'sine', 0.4, 0.25), 200);
+            break;
+          case 'ovelha':
+            this.playTone(220, 'sawtooth', 0.5, 0.2);
+            break;
+          case 'pato':
+            this.playTone(300, 'square', 0.15, 0.15);
+            setTimeout(() => this.playTone(280, 'square', 0.15, 0.15), 150);
+            break;
+          case 'porco':
+            this.playTone(180, 'square', 0.1, 0.2);
+            setTimeout(() => this.playTone(160, 'square', 0.1, 0.2), 120);
+            break;
+          case 'macaco':
+            this.playTone(600, 'sine', 0.1, 0.15);
+            setTimeout(() => this.playTone(800, 'sine', 0.1, 0.15), 120);
+            setTimeout(() => this.playTone(600, 'sine', 0.1, 0.15), 240);
+            break;
+          case 'coruja':
+            this.playTone(350, 'sine', 0.3, 0.15);
+            setTimeout(() => this.playTone(300, 'sine', 0.4, 0.15), 350);
+            break;
+          default:
+            this.playPop();
+        }
       }
     }
 
-    const audioSystem = new OrganicAudio();
+    const audioSystem = new SensoryAudio();
 
-    // DADOS COMPLETE A FRASE
+    // --- BANCO DE DESENHOS PRECISOS PARA O LIGUE OS PONTOS ---
+    const dotToDotData = {
+      'Carros & Motos': [
+        {
+          id: 'car',
+          name: 'Carro Esporte',
+          emoji: '🚗',
+          color: '#EF4444',
+          svgPath: "M 40,160 L 70,160 L 90,110 L 170,80 L 250,80 L 300,110 L 350,160 L 370,160 L 370,200 L 350,210 L 320,210 L 300,190 L 260,190 L 240,210 L 130,210 L 110,190 L 70,190 L 50,210 L 40,200 Z",
+          dots: [
+            { id: 1, x: 40, y: 160 },
+            { id: 2, x: 70, y: 160 },
+            { id: 3, x: 90, y: 110 },
+            { id: 4, x: 170, y: 80 },
+            { id: 5, x: 250, y: 80 },
+            { id: 6, x: 300, y: 110 },
+            { id: 7, x: 350, y: 160 },
+            { id: 8, x: 370, y: 160 },
+            { id: 9, x: 370, y: 200 },
+            { id: 10, x: 350, y: 210 },
+            { id: 11, x: 250, y: 210 },
+            { id: 12, x: 130, y: 210 },
+            { id: 13, x: 40, y: 200 }
+          ]
+        },
+        {
+          id: 'moto',
+          name: 'Motocicleta',
+          emoji: '🏍️',
+          color: '#3B82F6',
+          svgPath: "M 60,170 L 100,100 L 140,100 L 180,130 L 250,130 L 310,170 L 340,170 L 340,210 L 280,210 L 220,180 L 140,180 L 80,210 Z",
+          dots: [
+            { id: 1, x: 60, y: 170 },
+            { id: 2, x: 100, y: 100 },
+            { id: 3, x: 140, y: 100 },
+            { id: 4, x: 180, y: 130 },
+            { id: 5, x: 250, y: 130 },
+            { id: 6, x: 310, y: 170 },
+            { id: 7, x: 340, y: 170 },
+            { id: 8, x: 340, y: 210 },
+            { id: 9, x: 280, y: 210 },
+            { id: 10, x: 220, y: 180 },
+            { id: 11, x: 140, y: 180 },
+            { id: 12, x: 80, y: 210 }
+          ]
+        }
+      ],
+      'Animais': [
+        {
+          id: 'dog',
+          name: 'Cachorrinho',
+          emoji: '🐶',
+          color: '#F59E0B',
+          svgPath: "M 130,230 L 110,160 L 80,120 L 130,90 L 180,110 L 230,90 L 280,120 L 250,160 L 230,230 L 180,260 Z",
+          dots: [
+            { id: 1, x: 130, y: 230 },
+            { id: 2, x: 110, y: 160 },
+            { id: 3, x: 80, y: 120 },
+            { id: 4, x: 130, y: 90 },
+            { id: 5, x: 180, y: 110 },
+            { id: 6, x: 230, y: 90 },
+            { id: 7, x: 280, y: 120 },
+            { id: 8, x: 250, y: 160 },
+            { id: 9, x: 230, y: 230 },
+            { id: 10, x: 180, y: 260 }
+          ]
+        }
+      ],
+      'Flores': [
+        {
+          id: 'flower',
+          name: 'Flor do Campo',
+          emoji: '🌼',
+          color: '#EC4899',
+          svgPath: "M 200,60 L 230,110 L 280,90 L 260,140 L 310,160 L 260,180 L 280,230 L 230,210 L 200,260 L 170,210 L 120,230 L 140,180 L 90,160 L 140,140 L 120,90 L 170,110 Z",
+          dots: [
+            { id: 1, x: 200, y: 60 },
+            { id: 2, x: 230, y: 110 },
+            { id: 3, x: 280, y: 90 },
+            { id: 4, x: 260, y: 140 },
+            { id: 5, x: 310, y: 160 },
+            { id: 6, x: 260, y: 180 },
+            { id: 7, x: 280, y: 230 },
+            { id: 8, x: 230, y: 210 },
+            { id: 9, x: 200, y: 260 },
+            { id: 10, x: 170, y: 210 },
+            { id: 11, x: 120, y: 230 },
+            { id: 12, x: 140, y: 180 },
+            { id: 13, x: 90, y: 160 },
+            { id: 14, x: 140, y: 140 },
+            { id: 15, x: 120, y: 90 },
+            { id: 16, x: 170, y: 110 }
+          ]
+        }
+      ],
+      'Frutas & Legumes': [
+        {
+          id: 'apple',
+          name: 'Maçã',
+          emoji: '🍎',
+          color: '#EF4444',
+          svgPath: "M 200,90 L 240,75 L 285,110 L 290,170 L 260,235 L 200,270 L 140,235 L 110,170 L 115,110 L 160,75 Z",
+          dots: [
+            { id: 1, x: 200, y: 90 },
+            { id: 2, x: 240, y: 75 },
+            { id: 3, x: 285, y: 110 },
+            { id: 4, x: 290, y: 170 },
+            { id: 5, x: 260, y: 235 },
+            { id: 6, x: 200, y: 270 },
+            { id: 7, x: 140, y: 235 },
+            { id: 8, x: 110, y: 170 },
+            { id: 9, x: 115, y: 110 },
+            { id: 10, x: 160, y: 75 }
+          ]
+        }
+      ]
+    };
+
+    // --- BANCO DE DADOS PARA COMPLETE A FRASE ---
     const fillSentenceData = [
       {
         id: 1,
-        prefix: "Eu gosto de comer ",
-        suffix: " no almoço.",
+        sentencePrefix: "Eu gosto de comer ",
+        sentenceSuffix: " no almoço.",
         options: [
           { text: "Maçã", icon: "🍎", isCorrect: true },
           { text: "Tênis", icon: "👟", isCorrect: false },
@@ -74,8 +271,8 @@
       },
       {
         id: 2,
-        prefix: "O ",
-        suffix: " faz au au no quintal.",
+        sentencePrefix: "O ",
+        sentenceSuffix: " faz au au no quintal.",
         options: [
           { text: "Flor", icon: "🌸", isCorrect: false },
           { text: "Cachorro", icon: "🐶", isCorrect: true },
@@ -84,17 +281,27 @@
       },
       {
         id: 3,
-        prefix: "Antes de dormir, eu vou ",
-        suffix: " meus dentes.",
+        sentencePrefix: "Antes de dormir, eu vou ",
+        sentenceSuffix: " meus dentes.",
         options: [
           { text: "Escovar", icon: "🪥", isCorrect: true },
           { text: "Correr", icon: "🏃", isCorrect: false },
           { text: "Desenhar", icon: "🎨", isCorrect: false }
         ]
+      },
+      {
+        id: 4,
+        sentencePrefix: "Quando está sol, a ",
+        sentenceSuffix: " cresce no jardim.",
+        options: [
+          { text: "Bola", icon: "⚽", isCorrect: false },
+          { text: "Flor", icon: "🌼", isCorrect: true },
+          { text: "Mochila", icon: "🎒", isCorrect: false }
+        ]
       }
     ];
 
-    // DADOS PEDIR AJUDA
+    // --- BANCO DE DADOS PARA COMO PEDIR AJUDA ---
     const helpTasksData = [
       {
         id: 'shoes',
@@ -115,230 +322,1207 @@
           { text: '"Pode pegar a pasta de dentes para mim?"', icon: '🙋‍♂️', isHelpful: true, tip: 'Muito bem! Apontar ou pedir gentilmente funciona super bem!' },
           { text: 'Tentar subir em um lugar perigoso sozinho', icon: '⚠️', isHelpful: false, tip: 'Cuidado! Sempre peça para um adulto alcançar objetos altos.' }
         ]
+      },
+      {
+        id: 'food',
+        title: 'Quer Comer Algo',
+        icon: '🍎',
+        prompt: 'Quando estiver com fome e quiser um lanche gostoso:',
+        options: [
+          { text: '"Estou com fome, podemos fazer um lanche?"', icon: '🍽️', isHelpful: true, tip: 'Perfeito! Mostrar a figura do lanche ou falar ajuda bastante.' },
+          { text: 'Chorar sem explicar o que quer', icon: '😢', isHelpful: false, tip: 'Se você mostrar o cartão da comida, as pessoas vão entender rapidinho!' }
+        ]
+      },
+      {
+        id: 'clothes',
+        title: 'Vestir a Roupa',
+        icon: '👕',
+        prompt: 'Se a blusa ficou presa na cabeça ao se vestir:',
+        options: [
+          { text: '"Ajuda a colocar a blusa?"', icon: '🤲', isHelpful: true, tip: 'Boa! Estender os braços e pedir ajuda facilita tudo!' },
+          { text: 'Puxar com força e rasgar a roupa', icon: '⚡', isHelpful: false, tip: 'Calma! Peça ajuda para puxar a blusa devagar.' }
+        ]
+      },
+      {
+        id: 'out',
+        title: 'Sair para Passear',
+        icon: '🌳',
+        prompt: 'Quando quiser ir ao parque ou passear na rua:',
+        options: [
+          { text: '"Podemos ir ao parque hoje?"', icon: '🛝', isHelpful: true, tip: 'Ótimo! Pegar no sapato ou mostrar o parque ajuda a combinar a saída.' },
+          { text: 'Abrir a porta e sair correndo sozinho', icon: '🚫', isHelpful: false, tip: 'Segurança em primeiro lugar! Sempre dê a mão para um adulto ao sair.' }
+        ]
       }
     ];
 
-    const animals = [
-      { name: 'Cavalo', icon: '🐴', freq: 650 },
-      { name: 'Vaca', icon: '🐮', freq: 120 },
-      { name: 'Cachorro', icon: '🐶', freq: 260 },
-      { name: 'Gato', icon: '🐱', freq: 520 }
+    // --- ELEMENTOS DIVERSOS PARA O JOGO DA MEMÓRIA ---
+    const memoryPool = [
+      { id: 'cavalo', name: 'Cavalo', icon: '🐴', color: 'bg-amber-100 border-amber-300' },
+      { id: 'carro', name: 'Carro', icon: '🚗', color: 'bg-red-100 border-red-300' },
+      { id: 'flor', name: 'Flor', icon: '🌸', color: 'bg-pink-100 border-pink-300' },
+      { id: 'gato', name: 'Gato', icon: '🐱', color: 'bg-orange-100 border-orange-300' },
+      { id: 'maca', name: 'Maçã', icon: '🍎', color: 'bg-rose-100 border-rose-300' },
+      { id: 'estrela', name: 'Estrela', icon: '⭐', color: 'bg-yellow-100 border-yellow-300' },
+      { id: 'sol', name: 'Sol', icon: '☀️', color: 'bg-amber-200 border-amber-400' },
+      { id: 'aviao', name: 'Avião', icon: '✈️', color: 'bg-sky-100 border-sky-300' },
+      { id: 'sorvete', name: 'Sorvete', icon: '🍦', color: 'bg-purple-100 border-purple-300' },
+      { id: 'bola', name: 'Bola', icon: '⚽', color: 'bg-emerald-100 border-emerald-300' }
     ];
 
+    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
     function App() {
-      const [module, setModule] = useState('home');
+      const [supportLevel, setSupportLevel] = useState(2);
+      const [themeMode, setThemeMode] = useState('pastel');
+      const [isMuted, setIsMuted] = useState(false);
+      const [reduceMotion, setReduceMotion] = useState(false);
+      const [activeModule, setActiveModule] = useState('home');
+      const [showParentModal, setShowParentModal] = useState(false);
+      const [selectedCategory, setSelectedCategory] = useState('Todos');
 
-      // Complete a Frase
-      const [sIndex, setSIndex] = useState(0);
-      const [sOpt, setSOpt] = useState(null);
-      const [sFeedback, setSFeedback] = useState(null);
+      // --- ESTADOS DO JOGO COMPLETE A FRASE ---
+      const [sentenceIndex, setSentenceIndex] = useState(0);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [sentenceFeedback, setSentenceFeedback] = useState(null);
 
-      // Pedir Ajuda
-      const [hIndex, setHIndex] = useState(0);
-      const [hFeedback, setHFeedback] = useState(null);
+      const currentSentence = fillSentenceData[sentenceIndex];
 
-      // Lousa
+      const handleSelectOption = (option) => {
+        setSelectedOption(option);
+        if (option.isCorrect) {
+          setSentenceFeedback('success');
+          audioSystem.playSuccess();
+        } else {
+          setSentenceFeedback('error');
+          audioSystem.playError();
+        }
+      };
+
+      const nextSentence = () => {
+        setSelectedOption(null);
+        setSentenceFeedback(null);
+        setSentenceIndex((prev) => (prev + 1) % fillSentenceData.length);
+      };
+
+      // --- ESTADOS DO JOGO COMO PEDIR AJUDA ---
+      const [taskIndex, setTaskIndex] = useState(0);
+      const [helpFeedback, setHelpFeedback] = useState(null);
+
+      const currentHelpTask = helpTasksData[taskIndex];
+
+      const handleHelpOptionClick = (option) => {
+        if (option.isHelpful) {
+          setHelpFeedback({ type: 'success', tip: option.tip });
+          audioSystem.playSuccess();
+        } else {
+          setHelpFeedback({ type: 'error', tip: option.tip });
+          audioSystem.playError();
+        }
+      };
+
+      const nextHelpTask = () => {
+        setHelpFeedback(null);
+        setTaskIndex((prev) => (prev + 1) % helpTasksData.length);
+      };
+
+      // --- ESTADOS DA LOUSA MÁGICA (DESENHO LIVRE) ---
       const canvasRef = useRef(null);
       const [isDrawing, setIsDrawing] = useState(false);
-      const [color, setColor] = useState('#4F46E5');
-      const [size, setSize] = useState(6);
+      const [brushColor, setBrushColor] = useState('#4F46E5');
+      const [brushSize, setBrushSize] = useState(6);
+      const [isEraser, setIsEraser] = useState(false);
 
       useEffect(() => {
-        if (module === 'drawing' && canvasRef.current) {
+        if (activeModule === 'drawing-board' && canvasRef.current) {
           const canvas = canvasRef.current;
           canvas.width = canvas.parentElement.clientWidth;
-          canvas.height = 360;
+          canvas.height = 380;
           const ctx = canvas.getContext('2d');
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-      }, [module]);
+      }, [activeModule]);
 
-      // RENDER: HOME
-      if (module === 'home') {
-        return e('div', { className: 'max-w-4xl mx-auto space-y-6' },
-          e('div', { className: 'text-center p-8 bg-white rounded-3xl shadow-md border-4 border-dashed border-pink-300' },
-            e('h1', { className: 'text-4xl font-black mb-2 text-indigo-600' }, 'Mundo Pop! & Ploft!'),
-            e('p', { className: 'font-semibold opacity-80' }, 'Escolha um jogo para aprender e se divertir!')
-          ),
-          e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
-            e('button', { onClick: () => setModule('fill'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-violet-400 text-left hover:scale-102 transition' },
-              e('div', { className: 'text-4xl mb-2' }, '✍️'),
-              e('h2', { className: 'text-xl font-bold' }, 'Complete a Frase'),
-              e('p', { className: 'text-sm opacity-75' }, 'Escolha a opção correta para a história.')
-            ),
-            e('button', { onClick: () => setModule('help'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-teal-400 text-left hover:scale-102 transition' },
-              e('div', { className: 'text-4xl mb-2' }, '🤝'),
-              e('h2', { className: 'text-xl font-bold' }, 'Como Pedir Ajuda'),
-              e('p', { className: 'text-sm opacity-75' }, 'Aprenda a pedir apoio em várias tarefas.')
-            ),
-            e('button', { onClick: () => setModule('drawing'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-rose-400 text-left hover:scale-102 transition' },
-              e('div', { className: 'text-4xl mb-2' }, '🎨'),
-              e('h2', { className: 'text-xl font-bold' }, 'Lousa Mágica'),
-              e('p', { className: 'text-sm opacity-75' }, 'Desenhe tudo que vier na imaginação!')
-            ),
-            e('button', { onClick: () => setModule('animals'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-emerald-400 text-left hover:scale-102 transition' },
-              e('div', { className: 'text-4xl mb-2' }, '🔊'),
-              e('h2', { className: 'text-xl font-bold' }, 'Sons dos Animais'),
-              e('p', { className: 'text-sm opacity-75' }, 'Ouça os sons dos bichinhos.')
-            )
-          )
-        );
-      }
+      const startDrawing = (e) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const ctx = canvas.getContext('2d');
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-      // RENDER: COMPLETE A FRASE
-      if (module === 'fill') {
-        const cur = fillSentenceData[sIndex];
-        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-6' },
-          e('div', { className: 'flex justify-between items-center' },
-            e('h2', { className: 'text-2xl font-bold' }, '✍️ Complete a Frase'),
-            e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
-          ),
-          e('div', { className: 'p-6 bg-slate-50 border-4 border-dashed border-violet-200 rounded-2xl text-center' },
-            e('p', { className: 'text-2xl font-black' },
-              cur.prefix,
-              e('span', { className: 'px-3 py-1 mx-2 bg-white border-b-4 border-violet-500 rounded text-violet-600' }, sOpt ? `${sOpt.icon} ${sOpt.text}` : '_____'),
-              cur.suffix
-            )
-          ),
-          e('div', { className: 'grid grid-cols-3 gap-4' },
-            cur.options.map((opt, i) => e('button', {
-              key: i,
-              onClick: () => {
-                setSOpt(opt);
-                if (opt.isCorrect) { setSFeedback('ok'); audioSystem.playSuccess(); }
-                else { setSFeedback('err'); audioSystem.playError(); }
-              },
-              className: 'p-4 border-4 rounded-2xl text-center bg-white hover:scale-105 transition'
-            }, e('div', { className: 'text-4xl' }, opt.icon), e('div', { className: 'font-bold' }, opt.text)))
-          ),
-          sFeedback === 'ok' && e('div', { className: 'p-4 bg-emerald-100 text-emerald-900 rounded-2xl text-center space-y-2' },
-            e('h3', { className: 'text-xl font-bold' }, '🎉 Parabéns! Você acertou!'),
-            e('button', { onClick: () => { setSOpt(null); setSFeedback(null); setSIndex((sIndex + 1) % fillSentenceData.length); }, className: 'px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl' }, 'Próxima Frase')
-          ),
-          sFeedback === 'err' && e('div', { className: 'p-4 bg-rose-100 text-rose-900 rounded-2xl text-center' },
-            e('h3', { className: 'font-bold' }, '🤔 Ops! Tente outra opção.')
-          )
-        );
-      }
+        ctx.beginPath();
+        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+        setIsDrawing(true);
+      };
 
-      // RENDER: PEDIR AJUDA
-      if (module === 'help') {
-        const cur = helpTasksData[hIndex];
-        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-6' },
-          e('div', { className: 'flex justify-between items-center' },
-            e('h2', { className: 'text-2xl font-bold' }, '🤝 Como Pedir Ajuda'),
-            e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
-          ),
-          e('div', { className: 'p-4 bg-teal-50 rounded-2xl' },
-            e('h3', { className: 'text-lg font-bold text-teal-900' }, `${cur.icon} ${cur.title}`),
-            e('p', { className: 'font-semibold text-slate-700 mt-1' }, cur.prompt)
-          ),
-          e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
-            cur.options.map((opt, i) => e('button', {
-              key: i,
-              onClick: () => {
-                setHFeedback(opt);
-                if (opt.isHelpful) audioSystem.playSuccess(); else audioSystem.playError();
-              },
-              className: 'p-4 border-2 rounded-2xl text-left bg-white hover:border-teal-400 flex items-center gap-3'
-            }, e('span', { className: 'text-3xl' }, opt.icon), e('span', { className: 'font-bold' }, opt.text)))
-          ),
-          hFeedback && e('div', { className: `p-4 rounded-2xl text-center space-y-2 ${hFeedback.isHelpful ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}` },
-            e('p', { className: 'font-bold' }, hFeedback.tip),
-            e('button', { onClick: () => { setHFeedback(null); setHIndex((hIndex + 1) % helpTasksData.length); }, className: 'px-4 py-2 bg-slate-800 text-white font-bold rounded-xl' }, 'Próxima Situação')
-          )
-        );
-      }
+      const draw = (e) => {
+        if (!isDrawing) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const ctx = canvas.getContext('2d');
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-      // RENDER: LOUSA MÁGICA
-      if (module === 'drawing') {
-        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-4' },
-          e('div', { className: 'flex justify-between items-center' },
-            e('h2', { className: 'text-2xl font-bold' }, '🎨 Lousa Mágica'),
-            e('div', { className: 'flex gap-2' },
-              e('button', { onClick: () => {
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-              }, className: 'px-3 py-1 bg-rose-500 text-white font-bold rounded-xl' }, '🗑️ Limpar'),
-              e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
-            )
-          ),
-          e('div', { className: 'flex gap-2 items-center bg-slate-100 p-2 rounded-xl' },
-            ['#4F46E5', '#EF4444', '#10B981', '#F59E0B', '#000000'].map(c => e('button', {
-              key: c,
-              onClick: () => setColor(c),
-              style: { backgroundColor: c },
-              className: `w-6 h-6 rounded-full border-2 border-white ${color === c ? 'scale-125' : ''}`
-            }))
-          ),
-          e('div', { className: 'border-4 border-indigo-200 rounded-2xl overflow-hidden' },
-            e('canvas', {
-              ref: canvasRef,
-              onMouseDown: (ev) => {
-                const ctx = canvasRef.current.getContext('2d');
-                const r = canvasRef.current.getBoundingClientRect();
-                ctx.beginPath();
-                ctx.moveTo(ev.clientX - r.left, ev.clientY - r.top);
-                setIsDrawing(true);
-              },
-              onMouseMove: (ev) => {
-                if (!isDrawing) return;
-                const ctx = canvasRef.current.getContext('2d');
-                const r = canvasRef.current.getBoundingClientRect();
-                ctx.strokeStyle = color;
-                ctx.lineWidth = size;
-                ctx.lineTo(ev.clientX - r.left, ev.clientY - r.top);
-                ctx.stroke();
-              },
-              onMouseUp: () => setIsDrawing(false),
-              onTouchStart: (ev) => {
-                const ctx = canvasRef.current.getContext('2d');
-                const r = canvasRef.current.getBoundingClientRect();
-                ctx.beginPath();
-                ctx.moveTo(ev.touches[0].clientX - r.left, ev.touches[0].clientY - r.top);
-                setIsDrawing(true);
-              },
-              onTouchMove: (ev) => {
-                if (!isDrawing) return;
-                const ctx = canvasRef.current.getContext('2d');
-                const r = canvasRef.current.getBoundingClientRect();
-                ctx.strokeStyle = color;
-                ctx.lineWidth = size;
-                ctx.lineTo(ev.touches[0].clientX - r.left, ev.touches[0].clientY - r.top);
-                ctx.stroke();
-              },
-              onTouchEnd: () => setIsDrawing(false),
-              className: 'w-full touch-none cursor-crosshair'
-            })
-          )
-        );
-      }
+        ctx.strokeStyle = isEraser ? '#FFFFFF' : brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        ctx.stroke();
+      };
 
-      // RENDER: SONS ANIMAIS
-      if (module === 'animals') {
-        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-6' },
-          e('div', { className: 'flex justify-between items-center' },
-            e('h2', { className: 'text-2xl font-bold' }, '🔊 Sons dos Animais'),
-            e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
-          ),
-          e('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
-            animals.map((a, i) => e('button', {
-              key: i,
-              onClick: () => audioSystem.playTone(a.freq, 'sawtooth', 0.4, 0.2),
-              className: 'p-6 bg-slate-50 border-2 rounded-2xl text-center hover:scale-105 transition'
-            }, e('div', { className: 'text-5xl mb-2' }, a.icon), e('div', { className: 'font-bold' }, a.name)))
-          )
-        );
-      }
+      const stopDrawing = () => {
+        setIsDrawing(false);
+      };
 
-      return null;
+      const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        audioSystem.playPop(1.3);
+      };
+
+      // --- BOLHAS SENSORIAIS ---
+      const [bubbles, setBubbles] = useState([]);
+      useEffect(() => {
+        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
+          id: Date.now() + i,
+          x: 10 + (i * 11) % 80,
+          y: 20 + (i * 15) % 60,
+          size: 70 + (i % 3) * 20,
+          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
+        }));
+        setBubbles(initialBubbles);
+      }, []);
+
+      // --- EXPRESSAR SENTIMENTOS ---
+      const emotionsData = [
+        { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
+        { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
+        { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
+        { id: 'angry', emoji: '😡', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' }
+      ];
+      const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
+
+      // --- ROTINA SEMANAL ---
+      const initialRoutines = [
+        { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅' },
+        { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥' },
+        { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿' },
+        { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣' },
+        { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊' },
+        { id: 6, title: 'Ir para a Escola / Creche / Faculdade', time: 'Manhã', icon: '🎒' },
+        { id: 7, title: 'Almoçar', time: 'Tarde', icon: '🍽️' },
+        { id: 8, title: 'Brincar / Momento Livre', time: 'Tarde', icon: '🎨' },
+        { id: 9, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚' },
+        { id: 10, title: 'Jantar', time: 'Noite', icon: '🍲' },
+        { id: 11, title: 'Guardar Brinquedos', time: 'Noite', icon: '🧸' },
+        { id: 12, title: 'Hora de Dormir', time: 'Noite', icon: '🌙' }
+      ];
+
+      const [currentDay, setCurrentDay] = useState('Segunda');
+      const [routineTab, setRoutineTab] = useState('today'); // 'today' ou 'history'
+      const [weeklyRoutines, setWeeklyRoutines] = useState(() => {
+        const initialMap = {};
+        weekDays.forEach(day => {
+          initialMap[day] = initialRoutines.map(r => ({ ...r, completed: false }));
+        });
+        return initialMap;
+      });
+
+      const completeRoutine = (id) => {
+        setWeeklyRoutines(prev => ({
+          ...prev,
+          [currentDay]: prev[currentDay].map(r => r.id === id ? { ...r, completed: !r.completed } : r)
+        }));
+        audioSystem.playSuccess();
+      };
+
+      // --- LIGUE OS PONTOS ---
+      const [dotCategory, setDotCategory] = useState('Carros & Motos');
+      const [selectedDrawingIndex, setSelectedDrawingIndex] = useState(0);
+      const [nextDot, setNextDot] = useState(1);
+      const [connectedDots, setConnectedDots] = useState([]);
+      const [isDrawingCompleted, setIsDrawingCompleted] = useState(false);
+
+      const currentDrawing = dotToDotData[dotCategory][selectedDrawingIndex] || dotToDotData['Carros & Motos'][0];
+
+      const handleDotClick = (dotId) => {
+        if (dotId === nextDot) {
+          audioSystem.playPop(1 + dotId * 0.1);
+          setConnectedDots(prev => [...prev, dotId]);
+          if (dotId === currentDrawing.dots.length) {
+            setIsDrawingCompleted(true);
+            audioSystem.playSuccess();
+          } else {
+            setNextDot(prev => prev + 1);
+          }
+        }
+      };
+
+      const resetDotGame = () => {
+        setNextDot(1);
+        setConnectedDots([]);
+        setIsDrawingCompleted(false);
+      };
+
+      // --- QUEBRA-CABEÇA ---
+      const [puzzleSize, setPuzzleSize] = useState(3);
+      const [puzzleImage, setPuzzleImage] = useState('🚗');
+      const [puzzlePieces, setPuzzlePieces] = useState([]);
+      const [selectedPieceIndex, setSelectedPieceIndex] = useState(null);
+      const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
+
+      const initPuzzle = () => {
+        const total = puzzleSize * puzzleSize;
+        let arr = Array.from({ length: total }, (_, i) => i);
+        // Embaralhar
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        setPuzzlePieces(arr);
+        setSelectedPieceIndex(null);
+        setIsPuzzleSolved(false);
+      };
+
+      useEffect(() => {
+        initPuzzle();
+      }, [puzzleSize, puzzleImage]);
+
+      const handlePieceClick = (index) => {
+        if (isPuzzleSolved) return;
+        audioSystem.playPop(1.1);
+        if (selectedPieceIndex === null) {
+          setSelectedPieceIndex(index);
+        } else {
+          // Trocar peças
+          const newPieces = [...puzzlePieces];
+          const temp = newPieces[selectedPieceIndex];
+          newPieces[selectedPieceIndex] = newPieces[index];
+          newPieces[index] = temp;
+          setPuzzlePieces(newPieces);
+          setSelectedPieceIndex(null);
+
+          // Verificar vitória
+          const solved = newPieces.every((val, idx) => val === idx);
+          if (solved) {
+            setIsPuzzleSolved(true);
+            audioSystem.playSuccess();
+          }
+        }
+      };
+
+      // --- JOGO DA MEMÓRIA COM DIVERSIDADE DE IMAGENS ---
+      const [memoryCards, setMemoryCards] = useState([]);
+      const [flippedCards, setFlippedCards] = useState([]);
+      const [matchedCards, setMatchedCards] = useState([]);
+      const [memoryMoves, setMemoryMoves] = useState(0);
+
+      const initMemoryGame = () => {
+        // Selecionar 8 itens variados da pool
+        const shuffledPool = [...memoryPool].sort(() => 0.5 - Math.random()).slice(0, 8);
+        const duplicated = [];
+        shuffledPool.forEach((item, index) => {
+          duplicated.push({ ...item, uniqueId: index * 2 });
+          duplicated.push({ ...item, uniqueId: index * 2 + 1 });
+        });
+        const finalShuffled = duplicated.sort(() => 0.5 - Math.random());
+        setMemoryCards(finalShuffled);
+        setFlippedCards([]);
+        setMatchedCards([]);
+        setMemoryMoves(0);
+      };
+
+      useEffect(() => {
+        initMemoryGame();
+      }, []);
+
+      const handleMemoryCardClick = (index) => {
+        if (flippedCards.length === 2 || flippedCards.includes(index) || matchedCards.includes(index)) return;
+
+        audioSystem.playPop(1.2);
+        const newFlipped = [...flippedCards, index];
+        setFlippedCards(newFlipped);
+
+        if (newFlipped.length === 2) {
+          setMemoryMoves(m => m + 1);
+          const firstCard = memoryCards[newFlipped[0]];
+          const secondCard = memoryCards[newFlipped[1]];
+
+          if (firstCard.id === secondCard.id) {
+            setMatchedCards(prev => [...prev, newFlipped[0], newFlipped[1]]);
+            setFlippedCards([]);
+            audioSystem.playSuccess();
+          } else {
+            setTimeout(() => {
+              setFlippedCards([]);
+            }, 1000);
+          }
+        }
+      };
+
+      // --- SOM DOS ANIMAIS ---
+      const animalSoundsList = [
+        { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Riiiii-hó!' },
+        { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Muuuuu!' },
+        { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Au Au!' },
+        { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miau!' },
+        { id: 'leao', name: 'Leão', emoji: '🦁', soundText: 'Rrrrroaaoo!' },
+        { id: 'elefante', name: 'Elefante', emoji: '🐘', soundText: 'Fuuuu-uuh!' },
+        { id: 'galo', name: 'Galo', emoji: '🐓', soundText: 'Cocoricoo!' },
+        { id: 'ovelha', name: 'Ovelha', emoji: '🐑', soundText: 'Meeeee!' },
+        { id: 'pato', name: 'Pato', emoji: '🦆', soundText: 'Quack Quack!' },
+        { id: 'porco', name: 'Porco', emoji: '🐷', soundText: 'Oinc Oinc!' },
+        { id: 'macaco', name: 'Macaco', emoji: '🐵', soundText: 'Uh uh ah ah!' },
+        { id: 'coruja', name: 'Coruja', emoji: '🦉', soundText: 'Uuuh Uuuh!' }
+      ];
+      const [activeAnimalSound, setActiveAnimalSound] = useState(null);
+
+      const triggerAnimalSound = (animal) => {
+        setActiveAnimalSound(animal);
+        audioSystem.playAnimalSound(animal.id);
+        setTimeout(() => setActiveAnimalSound(null), 1200);
+      };
+
+      // --- AJUSTES DE TEMA E BOLHAS ---
+      useEffect(() => {
+        audioSystem.isMuted = isMuted;
+      }, [isMuted]);
+
+      const createBubble = (x, y) => {
+        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const newBubble = {
+          id: Date.now() + Math.random(),
+          x: x || Math.random() * 80 + 10,
+          y: y || Math.random() * 70 + 15,
+          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
+          color: randomColor
+        };
+        setBubbles(prev => [...prev.slice(-18), newBubble]);
+      };
+
+      const handleBubbleClick = (id) => {
+        audioSystem.playPop(0.8 + Math.random() * 0.5);
+        setBubbles(prev => prev.filter(b => b.id !== id));
+      };
+
+      const getThemeClass = () => {
+        if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
+        if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
+        return 'bg-amber-50/60 text-slate-800';
+      };
+
+      const getCardStyle = () => {
+        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
+        if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
+        return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
+      };
+
+      return (
+        <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
+          <div>
+            <header className="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveModule('home')} 
+                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
+                >
+                  Mundo Pop! & Ploft!
+                </button>
+                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
+                  Nível {supportLevel}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {activeModule !== 'home' && (
+                  <button 
+                    onClick={() => setActiveModule('home')}
+                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition"
+                  >
+                    🏠 Início
+                  </button>
+                )}
+                <button 
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-3 rounded-xl border font-semibold transition"
+                >
+                  {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
+                </button>
+                <button 
+                  onClick={() => setShowParentModal(true)}
+                  className="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition"
+                >
+                  ⚙️ Ajustes
+                </button>
+              </div>
+            </header>
+
+            <main className="max-w-6xl mx-auto">
+              {/* HOMEPAGE */}
+              {activeModule === 'home' && (
+                <div className="space-y-8">
+                  <div 
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
+                    }}
+                    className={`relative overflow-hidden min-h-[200px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
+                  >
+                    {bubbles.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBubbleClick(b.id);
+                        }}
+                        style={{
+                          left: `${b.x}%`,
+                          top: `${b.y}%`,
+                          width: `${b.size}px`,
+                          height: `${b.size}px`,
+                          backgroundColor: b.color
+                        }}
+                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
+                      />
+                    ))}
+                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
+                      Mundo Pop! & Ploft!
+                    </h1>
+                    <p className="text-center font-medium opacity-80 z-10">
+                      Escolha uma atividade interativa e divirta-se! 🫧
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <button 
+                      onClick={() => setActiveModule('fill-sentence')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-violet-400`}
+                    >
+                      <div className="text-4xl mb-3">✍️</div>
+                      <h2 className="text-xl font-bold mb-1">1. Complete a Frase</h2>
+                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('how-to-help')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-teal-400`}
+                    >
+                      <div className="text-4xl mb-3">🤝</div>
+                      <h2 className="text-xl font-bold mb-1">2. Como Pedir Ajuda</h2>
+                      <p className="text-sm opacity-75">Aprenda a pedir ajuda para tênis, dentes, lanches e passeios!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('drawing-board')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-rose-400`}
+                    >
+                      <div className="text-4xl mb-3">🎨</div>
+                      <h2 className="text-xl font-bold mb-1">3. Lousa Mágica (Desenho)</h2>
+                      <p className="text-sm opacity-75">Desenhe o que vier na sua imaginação com cores e pincéis!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('dot-to-dot')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-indigo-400`}
+                    >
+                      <div className="text-4xl mb-3">✏️</div>
+                      <h2 className="text-xl font-bold mb-1">4. Ligue os Pontos</h2>
+                      <p className="text-sm opacity-75">Carros, motos, animais, flores e frutas com traços realistas e divertidos!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('puzzle')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-blue-400`}
+                    >
+                      <div className="text-4xl mb-3">🧩</div>
+                      <h2 className="text-xl font-bold mb-1">5. Quebra-Cabeça</h2>
+                      <p className="text-sm opacity-75">Monte imagens interativas ajustando a dificuldade.</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('memory')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-amber-400`}
+                    >
+                      <div className="text-4xl mb-3">🎴</div>
+                      <h2 className="text-xl font-bold mb-1">6. Jogo da Memória</h2>
+                      <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos super variados!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('animal-sounds')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
+                    >
+                      <div className="text-4xl mb-3">🔊</div>
+                      <h2 className="text-xl font-bold mb-1">7. Sons dos Animais</h2>
+                      <p className="text-sm opacity-75">Toque nos animais para ouvir o relincho, mugido, miado e latido!</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('routines')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
+                    >
+                      <div className="text-4xl mb-3">📅</div>
+                      <h2 className="text-xl font-bold mb-1">8. Minha Rotina Semanal</h2>
+                      <p className="text-sm opacity-75">Acompanhamento diário de Segunda a Domingo com Histórico completo.</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('emotions')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
+                    >
+                      <div className="text-4xl mb-3">😊</div>
+                      <h2 className="text-xl font-bold mb-1">9. Expressar Sentimentos</h2>
+                      <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo.</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* MÓDULO COMPLETE A FRASE */}
+              {activeModule === 'fill-sentence' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">✍️ Complete a Frase</h2>
+                    <span className="text-sm font-bold bg-violet-100 text-violet-800 px-3 py-1 rounded-xl">
+                      Frase {sentenceIndex + 1} de {fillSentenceData.length}
+                    </span>
+                  </div>
+
+                  <div className="p-6 bg-slate-50 border-4 border-dashed border-violet-200 rounded-3xl text-center">
+                    <p className="text-2xl md:text-3xl font-black text-slate-800 leading-relaxed">
+                      {currentSentence.sentencePrefix}
+                      <span className="inline-block mx-2 px-4 py-1 bg-white border-b-4 border-violet-500 rounded-xl min-w-[120px] text-violet-600 shadow-inner">
+                        {selectedOption ? `${selectedOption.icon} ${selectedOption.text}` : '_______'}
+                      </span>
+                      {currentSentence.sentenceSuffix}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {currentSentence.options.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSelectOption(opt)}
+                        className={`p-6 rounded-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all ${
+                          selectedOption?.text === opt.text
+                            ? opt.isCorrect
+                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-lg'
+                              : 'border-red-500 bg-red-50 scale-95'
+                            : 'border-slate-200 bg-white hover:border-violet-300 hover:scale-102 shadow-sm'
+                        }`}
+                      >
+                        <span className="text-5xl">{opt.icon}</span>
+                        <span className="font-bold text-lg text-slate-800">{opt.text}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {sentenceFeedback === 'success' && (
+                    <div className="p-5 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center space-y-3">
+                      <div className="text-4xl animate-bounce">🎉</div>
+                      <h3 className="text-2xl font-black text-emerald-900">Muito bem! Você completou certinho!</h3>
+                      <button 
+                        onClick={nextSentence}
+                        className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
+                      >
+                        Próxima Frase ➡️
+                      </button>
+                    </div>
+                  )}
+
+                  {sentenceFeedback === 'error' && (
+                    <div className="p-5 bg-rose-100 border-2 border-rose-400 rounded-2xl text-center space-y-2">
+                      <div className="text-4xl">🤔</div>
+                      <h3 className="text-xl font-bold text-rose-900">Ops! Essa palavra não se encaixa bem aqui.</h3>
+                      <p className="text-sm text-rose-700">Tente escolher outra opção para completar a frase!</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MÓDULO COMO PEDIR AJUDA */}
+              {activeModule === 'how-to-help' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">🤝 Aprendendo a Pedir Ajuda</h2>
+                    <span className="text-sm font-bold bg-teal-100 text-teal-800 px-3 py-1 rounded-xl">
+                      Situação {taskIndex + 1} de {helpTasksData.length}
+                    </span>
+                  </div>
+
+                  <div className="p-6 bg-teal-50 border-2 border-teal-200 rounded-3xl space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-4xl">{currentHelpTask.icon}</span>
+                      <h3 className="text-xl font-black text-teal-900">{currentHelpTask.title}</h3>
+                    </div>
+                    <p className="text-lg font-bold text-slate-700">{currentHelpTask.prompt}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {currentHelpTask.options.map((opt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleHelpOptionClick(opt)}
+                        className={`p-6 rounded-2xl border-4 text-left flex items-start gap-4 transition-all ${
+                          opt.isHelpful 
+                            ? 'bg-white border-teal-200 hover:border-teal-400 hover:scale-[1.01]' 
+                            : 'bg-white border-slate-200 hover:border-amber-300'
+                        }`}
+                      >
+                        <span className="text-4xl">{opt.icon}</span>
+                        <div>
+                          <p className="font-bold text-base text-slate-800">{opt.text}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {helpFeedback && (
+                    <div className={`p-5 rounded-2xl border-2 text-center space-y-3 ${
+                      helpFeedback.type === 'success' 
+                        ? 'bg-emerald-100 border-emerald-400 text-emerald-900' 
+                        : 'bg-amber-100 border-amber-400 text-amber-900'
+                    }`}>
+                      <div className="text-3xl">{helpFeedback.type === 'success' ? '🌟' : '💡'}</div>
+                      <p className="text-lg font-bold">{helpFeedback.tip}</p>
+                      <button 
+                        onClick={nextHelpTask}
+                        className={`px-6 py-2.5 font-bold text-white rounded-xl transition ${
+                          helpFeedback.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'
+                        }`}
+                      >
+                        Próxima Situação ➡️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MÓDULO LOUSA MÁGICA */}
+              {activeModule === 'drawing-board' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-4`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold">🎨 Lousa Mágica (Desenho Livre)</h2>
+
+                    <div className="flex flex-wrap items-center gap-3 bg-slate-100 p-2 rounded-2xl">
+                      <div className="flex gap-1.5">
+                        {['#4F46E5', '#EF4444', '#10B981', '#F59E0B', '#EC4899', '#000000'].map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => {
+                              setBrushColor(color);
+                              setIsEraser(false);
+                            }}
+                            style={{ backgroundColor: color }}
+                            className={`w-7 h-7 rounded-full border-2 border-white transition-transform ${
+                              brushColor === color && !isEraser ? 'scale-125 ring-2 ring-indigo-400' : ''
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => setIsEraser(!isEraser)}
+                        className={`px-3 py-1.5 rounded-xl font-bold text-xs transition ${
+                          isEraser ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 border'
+                        }`}
+                      >
+                        🧹 Borracha
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {[4, 8, 14].map((size) => (
+                          <button
+                            key={size}
+                            onClick={() => setBrushSize(size)}
+                            className={`w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center border ${
+                              brushSize === size ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-white'
+                            }`}
+                          >
+                            {size === 4 ? 'P' : size === 8 ? 'M' : 'G'}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={clearCanvas}
+                        className="px-3 py-1.5 rounded-xl bg-rose-500 text-white font-bold text-xs hover:bg-rose-600 transition"
+                      >
+                        🗑️ Limpar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="w-full border-4 border-indigo-200 rounded-3xl overflow-hidden bg-white shadow-inner cursor-crosshair">
+                    <canvas
+                      ref={canvasRef}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                      className="w-full touch-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 1. LIGUE OS PONTOS */}
+              {activeModule === 'dot-to-dot' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold">✏️ Jogo de Ligação de Pontos</h2>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {Object.keys(dotToDotData).map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setDotCategory(cat);
+                            setSelectedDrawingIndex(0);
+                            resetDotGame();
+                          }}
+                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${dotCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl">
+                    <div className="font-bold text-indigo-900">
+                      Desenho: {currentDrawing.emoji} {currentDrawing.name}
+                    </div>
+                    <button 
+                      onClick={resetDotGame}
+                      className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition"
+                    >
+                      🔄 Reiniciar
+                    </button>
+                  </div>
+
+                  <div className="relative w-full h-[360px] border-4 border-dashed border-indigo-200 rounded-3xl bg-slate-50 flex items-center justify-center overflow-hidden">
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 300">
+                      <path 
+                        d={currentDrawing.svgPath} 
+                        fill={isDrawingCompleted ? currentDrawing.color : 'rgba(238, 242, 255, 0.5)'} 
+                        stroke={isDrawingCompleted ? currentDrawing.color : '#cbd5e1'} 
+                        strokeWidth={isDrawingCompleted ? "6" : "2"}
+                        strokeDasharray={isDrawingCompleted ? "none" : "6,6"}
+                        className="transition-all duration-500"
+                      />
+
+                      {connectedDots.map((dotId, index) => {
+                        if (index === 0) return null;
+                        const prevDotObj = currentDrawing.dots.find(d => d.id === connectedDots[index - 1]);
+                        const currentDotObj = currentDrawing.dots.find(d => d.id === dotId);
+                        return (
+                          <line
+                            key={index}
+                            x1={prevDotObj.x}
+                            y1={prevDotObj.y}
+                            x2={currentDotObj.x}
+                            y2={currentDotObj.y}
+                            stroke="#4F46E5"
+                            strokeWidth="5"
+                            strokeLinecap="round"
+                          />
+                        );
+                      })}
+                    </svg>
+
+                    {currentDrawing.dots.map((dot) => {
+                      const isConnected = connectedDots.includes(dot.id);
+                      const isNext = dot.id === nextDot;
+
+                      return (
+                        <button
+                          key={dot.id}
+                          onClick={() => handleDotClick(dot.id)}
+                          style={{ left: `${(dot.x / 400) * 100}%`, top: `${(dot.y / 300) * 100}%` }}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full font-black text-sm flex items-center justify-center shadow-md transition-transform ${
+                            isConnected 
+                              ? 'bg-emerald-500 text-white scale-90' 
+                              : isNext 
+                              ? 'bg-indigo-600 text-white scale-125 animate-pulse ring-4 ring-indigo-300' 
+                              : 'bg-white text-slate-700 border-2 border-indigo-400'
+                          }`}
+                        >
+                          {dot.id}
+                        </button>
+                      );
+                    })}
+
+                    {isDrawingCompleted && (
+                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center animate-fade-in">
+                        <div className="bg-white p-6 rounded-3xl shadow-2xl text-center space-y-2 border-4 border-emerald-400">
+                          <div className="text-6xl animate-bounce">{currentDrawing.emoji}</div>
+                          <h3 className="text-2xl font-black text-emerald-800">Parabéns! Desenho Concluído!</h3>
+                          <p className="font-bold text-slate-600">{currentDrawing.name}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. QUEBRA-CABEÇA */}
+              {activeModule === 'puzzle' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold">🧩 Jogo de Quebra-Cabeça</h2>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex gap-2">
+                        {['🚗', '🐶', '🌸', '🍎', '⭐'].map(img => (
+                          <button
+                            key={img}
+                            onClick={() => setPuzzleImage(img)}
+                            className={`p-2 rounded-xl text-xl transition ${puzzleImage === img ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                          >
+                            {img}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-1 border p-1 rounded-xl">
+                        {[3, 4].map(sz => (
+                          <button
+                            key={sz}
+                            onClick={() => setPuzzleSize(sz)}
+                            className={`px-3 py-1 rounded-lg font-bold text-sm ${puzzleSize === sz ? 'bg-indigo-600 text-white' : 'text-slate-600'}`}
+                          >
+                            {sz}x{sz}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-blue-50 p-4 rounded-2xl">
+                    <p className="text-sm font-bold text-blue-900">Clique em duas peças para trocá-las de lugar!</p>
+                    <button 
+                      onClick={initPuzzle}
+                      className="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition"
+                    >
+                      🔄 Embaralhar
+                    </button>
+                  </div>
+
+                  <div 
+                    className="grid gap-2 max-w-md mx-auto aspect-square bg-slate-200 p-3 rounded-3xl shadow-inner"
+                    style={{ gridTemplateColumns: `repeat(${puzzleSize}, minmax(0, 1fr))` }}
+                  >
+                    {puzzlePieces.map((pieceVal, index) => {
+                      const isCorrect = pieceVal === index;
+                      const isSelected = selectedPieceIndex === index;
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handlePieceClick(index)}
+                          className={`relative rounded-2xl text-4xl md:text-5xl flex items-center justify-center font-bold transition-all border-4 shadow-sm select-none ${
+                            isSelected 
+                              ? 'border-yellow-400 bg-yellow-100 scale-95 ring-4 ring-yellow-300' 
+                              : isCorrect 
+                              ? 'border-emerald-400 bg-emerald-50' 
+                              : 'border-white bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className="opacity-95">{puzzleImage}</span>
+                          <span className="absolute bottom-1 right-2 text-xs font-black opacity-30 text-slate-800">
+                            {pieceVal + 1}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {isPuzzleSolved && (
+                    <div className="p-4 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center">
+                      <h3 className="text-xl font-black text-emerald-900">🎉 Excelente! Você completou o Quebra-Cabeça!</h3>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 3. JOGO DA MEMÓRIA */}
+              {activeModule === 'memory' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold">🎴 Jogo da Memória Variado</h2>
+                      <p className="text-sm opacity-75">Encontre os pares correspondentes entre figuras variadas.</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-sm bg-amber-100 text-amber-900 px-3 py-1.5 rounded-xl">
+                        Jogadas: {memoryMoves}
+                      </span>
+                      <button 
+                        onClick={initMemoryGame}
+                        className="px-4 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition"
+                      >
+                        🔄 Novo Jogo
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-3 max-w-2xl mx-auto">
+                    {memoryCards.map((card, index) => {
+                      const isFlipped = flippedCards.includes(index) || matchedCards.includes(index);
+                      const isMatched = matchedCards.includes(index);
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleMemoryCardClick(index)}
+                          className={`h-24 md:h-28 rounded-2xl text-3xl md:text-4xl flex flex-col items-center justify-center font-bold transition-all border-4 shadow-md ${
+                            isFlipped 
+                              ? `${card.color} rotate-0` 
+                              : 'bg-indigo-600 border-indigo-400 text-white hover:bg-indigo-700'
+                          } ${isMatched ? 'opacity-60 border-emerald-400' : ''}`}
+                        >
+                          {isFlipped ? (
+                            <>
+                              <span>{card.icon}</span>
+                              <span className="text-xs font-bold mt-1 text-slate-700">{card.name}</span>
+                            </>
+                          ) : (
+                            <span className="text-2xl">❓</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {matchedCards.length === memoryCards.length && memoryCards.length > 0 && (
+                    <div className="p-4 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center">
+                      <h3 className="text-xl font-black text-emerald-900">🏆 Incrível! Você encontrou todos os pares em {memoryMoves} jogadas!</h3>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. SOM DOS ANIMAIS */}
+              {activeModule === 'animal-sounds' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div>
+                    <h2 className="text-2xl font-bold">🔊 Sons dos Animais</h2>
+                    <p className="text-sm opacity-75">Clique em cada animal para ouvir o som que ele faz!</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {animalSoundsList.map((animal) => {
+                      const isActive = activeAnimalSound?.id === animal.id;
+
+                      return (
+                        <button
+                          key={animal.id}
+                          onClick={() => triggerAnimalSound(animal)}
+                          className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center gap-2 select-none ${
+                            isActive 
+                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-xl ring-4 ring-emerald-300' 
+                              : 'border-slate-100 bg-white hover:border-emerald-200 hover:scale-102 shadow-sm'
+                          }`}
+                        >
+                          <div className={`text-6xl transition-transform ${isActive ? 'animate-bounce' : ''}`}>
+                            {animal.emoji}
+                          </div>
+                          <div className="font-bold text-lg text-slate-800">{animal.name}</div>
+                          <div className={`text-xs font-black px-2 py-1 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                            {animal.soundText}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ROTINA SEMANAL E HISTÓRICO */}
+              {activeModule === 'routines' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold">📅 Minha Rotina Semanal</h2>
+
+                    <div className="flex gap-2 border p-1 rounded-2xl bg-slate-100">
+                      <button
+                        onClick={() => setRoutineTab('today')}
+                        className={`px-4 py-2 rounded-xl font-bold text-sm transition ${routineTab === 'today' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}
+                      >
+                        📅 Tarefas do Dia
+                      </button>
+                      <button
+                        onClick={() => setRoutineTab('history')}
+                        className={`px-4 py-2 rounded-xl font-bold text-sm transition ${routineTab === 'history' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}
+                      >
+                        📊 Histórico Semanal
+                      </button>
+                    </div>
+                  </div>
+
+                  {routineTab === 'today' ? (
+                    <div className="space-y-6">
+                      <div className="flex flex-wrap gap-2 justify-center bg-indigo-50/60 p-3 rounded-2xl">
+                        {weekDays.map(day => (
+                          <button
+                            key={day}
+                            onClick={() => setCurrentDay(day)}
+                            className={`px-3 py-2 rounded-xl font-bold text-sm transition ${currentDay === day ? 'bg-indigo-600 text-white shadow-md scale-105' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
+                          >
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {weeklyRoutines[currentDay].map(r => (
+                          <div 
+                            key={r.id}
+                            onClick={() => completeRoutine(r.id)}
+                            className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-70' : 'bg-white border-slate-200'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl">{r.icon}</span>
+                              <div>
+                                <p className={`font-bold ${r.completed ? 'line-through text-slate-500' : ''}`}>{r.title}</p>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{r.time}</span>
+                              </div>
+                            </div>
+                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
+                              {r.completed ? '✓' : ''}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold text-slate-700">Acompanhamento dos Dias da Semana:</h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {weekDays.map(day => {
+                          const dayTasks = weeklyRoutines[day];
+                          const completedCount = dayTasks.filter(t => t.completed).length;
+                          const totalCount = dayTasks.length;
+                          const percent = Math.round((completedCount / totalCount) * 100);
+
+                          return (
+                            <div key={day} className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
+                              <div className="flex justify-between items-center font-bold">
+                                <span className="text-slate-800">{day}</span>
+                                <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                                  {completedCount} de {totalCount} concluídas ({percent}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                <div 
+                                  className="bg-emerald-500 h-full transition-all duration-500 rounded-full"
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* EXPRESSAR SENTIMENTOS */}
+              {activeModule === 'emotions' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <h2 className="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {emotionsData.map(e => (
+                      <button
+                        key={e.id}
+                        onClick={() => {
+                          setSelectedEmotion(e);
+                          audioSystem.playPop(1.2);
+                        }}
+                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
+                      >
+                        <div className="text-5xl mb-2">{e.emoji}</div>
+                        <div className="font-bold">{e.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
+                    <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
+                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+
+          {/* MODAL DE AJUSTES */}
+          {showParentModal && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
+                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
+                
+                <div>
+                  <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3].map(lvl => (
+                      <button 
+                        key={lvl}
+                        onClick={() => setSupportLevel(lvl)}
+                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                      >
+                        Nível {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-1">Tema Visual:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['pastel', 'dark', 'contrast'].map(t => (
+                      <button 
+                        key={t}
+                        onClick={() => setThemeMode(t)}
+                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowParentModal(false)}
+                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+
+          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
+            <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
+          </footer>
+        </div>
+      );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(e(App));
+    ReactDOM.render(<App />, document.getElementById('root'));
+    document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
