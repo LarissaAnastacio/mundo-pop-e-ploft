@@ -379,25 +379,35 @@
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
 
-      // --- ESTADOS DO JOGO DAS BOLHAS SENSORIAIS (POP-IT) ---
-      const [gridBubbles, setGridBubbles] = useState([]);
-      const initPopItGrid = () => {
-        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
-        const newGrid = Array.from({ length: 24 }).map((_, i) => ({
-          id: i,
-          popped: false,
-          color: colors[i % colors.length]
-        }));
-        setGridBubbles(newGrid);
-      };
-
+      // --- BOLHAS SENSORIAIS (MECÂNICA EXACTA INICIAL) ---
+      const [bubbles, setBubbles] = useState([]);
       useEffect(() => {
-        initPopItGrid();
+        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
+          id: Date.now() + i,
+          x: 10 + (i * 11) % 80,
+          y: 20 + (i * 15) % 60,
+          size: 70 + (i % 3) * 20,
+          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
+        }));
+        setBubbles(initialBubbles);
       }, []);
 
-      const handleGridBubblePop = (id) => {
-        audioSystem.playPop(0.9 + Math.random() * 0.4);
-        setGridBubbles(prev => prev.map(b => b.id === id ? { ...b, popped: !b.popped } : b));
+      const createBubble = (x, y) => {
+        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const newBubble = {
+          id: Date.now() + Math.random(),
+          x: x || Math.random() * 80 + 10,
+          y: y || Math.random() * 70 + 15,
+          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
+          color: randomColor
+        };
+        setBubbles(prev => [...prev.slice(-18), newBubble]);
+      };
+
+      const handleBubbleClick = (id) => {
+        audioSystem.playPop(0.8 + Math.random() * 0.5);
+        setBubbles(prev => prev.filter(b => b.id !== id));
       };
 
       // --- ESTADOS DE COMPLETE A FRASE ---
@@ -500,19 +510,6 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         audioSystem.playPop(1.3);
       };
-
-      // --- BOLHAS BANNER HOMEPAGE ---
-      const [bubbles, setBubbles] = useState([]);
-      useEffect(() => {
-        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
-          id: Date.now() + i,
-          x: 10 + (i * 11) % 80,
-          y: 20 + (i * 15) % 60,
-          size: 70 + (i % 3) * 20,
-          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
-        }));
-        setBubbles(initialBubbles);
-      }, []);
 
       // --- EXPRESSAR SENTIMENTOS ---
       const emotionsData = [
@@ -704,24 +701,6 @@
         audioSystem.isMuted = isMuted;
       }, [isMuted]);
 
-      const createBubble = (x, y) => {
-        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        const newBubble = {
-          id: Date.now() + Math.random(),
-          x: x || Math.random() * 80 + 10,
-          y: y || Math.random() * 70 + 15,
-          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
-          color: randomColor
-        };
-        setBubbles(prev => [...prev.slice(-18), newBubble]);
-      };
-
-      const handleBubbleClick = (id) => {
-        audioSystem.playPop(0.8 + Math.random() * 0.5);
-        setBubbles(prev => prev.filter(b => b.id !== id));
-      };
-
       const getThemeClass = () => {
         if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
         if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
@@ -775,58 +754,50 @@
             </header>
 
             <main className="max-w-6xl mx-auto">
+              {/* BANNER INTERATIVO DAS BOLHAS SENSORIAIS (CÓDIGO INICIAL) */}
+              <div 
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
+                }}
+                className={`relative overflow-hidden min-h-[200px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 mb-8 flex flex-col items-center justify-center cursor-pointer select-none`}
+              >
+                {bubbles.map(b => (
+                  <button
+                    key={b.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBubbleClick(b.id);
+                    }}
+                    style={{
+                      left: `${b.x}%`,
+                      top: `${b.y}%`,
+                      width: `${b.size}px`,
+                      height: `${b.size}px`,
+                      backgroundColor: b.color
+                    }}
+                    className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
+                  />
+                ))}
+                <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
+                  Mundo Pop! & Ploft!
+                </h1>
+                <p className="text-center font-medium opacity-80 z-10">
+                  Clique para criar bolinhas sensoriais e estourá-las! 🫧
+                </p>
+              </div>
+
               {/* HOMEPAGE */}
               {activeModule === 'home' && (
                 <div className="space-y-8">
-                  <div 
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
-                    }}
-                    className={`relative overflow-hidden min-h-[200px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
-                  >
-                    {bubbles.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBubbleClick(b.id);
-                        }}
-                        style={{
-                          left: `${b.x}%`,
-                          top: `${b.y}%`,
-                          width: `${b.size}px`,
-                          height: `${b.size}px`,
-                          backgroundColor: b.color
-                        }}
-                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
-                      />
-                    ))}
-                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
-                      Mundo Pop! & Ploft!
-                    </h1>
-                    <p className="text-center font-medium opacity-80 z-10">
-                      Escolha uma atividade interativa e divirta-se! 🫧
-                    </p>
-                  </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <button 
-                      onClick={() => setActiveModule('pop-it')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
-                    >
-                      <div className="text-4xl mb-3">🫧</div>
-                      <h2 className="text-xl font-bold mb-1">Pop! Bolhas Sensoriais</h2>
-                      <p className="text-sm opacity-75">Estoure bolinhas virtuais e sinta um relaxamento sensorial incrível!</p>
-                    </button>
-
                     <button 
                       onClick={() => setActiveModule('fill-sentence')}
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-violet-400`}
                     >
                       <div className="text-4xl mb-3">✍️</div>
-                      <h2 className="text-xl font-bold mb-1">Complete a Frase</h2>
-                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história com festa!</p>
+                      <h2 className="text-xl font-bold mb-1">1. Complete a Frase</h2>
+                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história!</p>
                     </button>
 
                     <button 
@@ -834,7 +805,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-teal-400`}
                     >
                       <div className="text-4xl mb-3">🤝</div>
-                      <h2 className="text-xl font-bold mb-1">Como Pedir Ajuda</h2>
+                      <h2 className="text-xl font-bold mb-1">2. Como Pedir Ajuda</h2>
                       <p className="text-sm opacity-75">Aprenda boas formas de pedir apoio para tênis, dentes e comida!</p>
                     </button>
 
@@ -843,7 +814,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-rose-400`}
                     >
                       <div className="text-4xl mb-3">🎨</div>
-                      <h2 className="text-xl font-bold mb-1">Lousa Mágica (Desenho)</h2>
+                      <h2 className="text-xl font-bold mb-1">3. Lousa Mágica (Desenho)</h2>
                       <p className="text-sm opacity-75">Desenhe o que vier na sua imaginação com cores e pincéis!</p>
                     </button>
 
@@ -852,8 +823,8 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-indigo-400`}
                     >
                       <div className="text-4xl mb-3">✏️</div>
-                      <h2 className="text-xl font-bold mb-1">Ligue os Pontos</h2>
-                      <p className="text-sm opacity-75">Carros, motos, animais e flores com traços realistas!</p>
+                      <h2 className="text-xl font-bold mb-1">4. Ligue os Pontos</h2>
+                      <p className="text-sm opacity-75">Carros, motos, animais, flores e frutas com traços realistas!</p>
                     </button>
 
                     <button 
@@ -861,7 +832,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-blue-400`}
                     >
                       <div className="text-4xl mb-3">🧩</div>
-                      <h2 className="text-xl font-bold mb-1">Quebra-Cabeça</h2>
+                      <h2 className="text-xl font-bold mb-1">5. Quebra-Cabeça</h2>
                       <p className="text-sm opacity-75">Monte imagens interativas ajustando a dificuldade.</p>
                     </button>
 
@@ -870,7 +841,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-amber-400`}
                     >
                       <div className="text-4xl mb-3">🎴</div>
-                      <h2 className="text-xl font-bold mb-1">Jogo da Memória</h2>
+                      <h2 className="text-xl font-bold mb-1">6. Jogo da Memória</h2>
                       <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos variados!</p>
                     </button>
 
@@ -879,7 +850,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
                     >
                       <div className="text-4xl mb-3">🔊</div>
-                      <h2 className="text-xl font-bold mb-1">Sons dos Animais</h2>
+                      <h2 className="text-xl font-bold mb-1">7. Sons dos Animais</h2>
                       <p className="text-sm opacity-75">Toque nos animais para ouvir o relincho, mugido e miado!</p>
                     </button>
 
@@ -888,7 +859,7 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
                     >
                       <div className="text-4xl mb-3">📅</div>
-                      <h2 className="text-xl font-bold mb-1">Minha Rotina Semanal</h2>
+                      <h2 className="text-xl font-bold mb-1">8. Minha Rotina Semanal</h2>
                       <p className="text-sm opacity-75">Acompanhamento diário de Segunda a Domingo com Histórico.</p>
                     </button>
 
@@ -897,43 +868,9 @@
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
                     >
                       <div className="text-4xl mb-3">😊</div>
-                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
+                      <h2 className="text-xl font-bold mb-1">9. Expressar Sentimentos</h2>
                       <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo.</p>
                     </button>
-                  </div>
-                </div>
-              )}
-
-              {/* MÓDULO POP! BOLHAS SENSORIAIS (POP-IT) */}
-              {activeModule === 'pop-it' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6 text-center`}>
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">🫧 Pop! Bolhas Sensoriais</h2>
-                    <button 
-                      onClick={initPopItGrid}
-                      className="px-4 py-2 bg-pink-500 text-white font-bold rounded-xl hover:bg-pink-600 transition"
-                    >
-                      🔄 Desestourar Todas
-                    </button>
-                  </div>
-
-                  <p className="text-slate-600 font-semibold">Toque nas bolinhas para estourar! Sinta o som relaxante de cada pop.</p>
-
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 max-w-xl mx-auto p-6 bg-pink-50/50 border-4 border-dashed border-pink-200 rounded-3xl">
-                    {gridBubbles.map((bubble) => (
-                      <button
-                        key={bubble.id}
-                        onClick={() => handleGridBubblePop(bubble.id)}
-                        style={{ backgroundColor: bubble.popped ? '#CBD5E1' : bubble.color }}
-                        className={`aspect-square rounded-full border-4 border-white shadow-md transition-all flex items-center justify-center text-xl select-none ${
-                          bubble.popped 
-                            ? 'scale-90 shadow-inner opacity-60 inset-shadow' 
-                            : 'hover:scale-110 active:scale-95 shadow-lg'
-                        }`}
-                      >
-                        {bubble.popped ? '🫧' : '✨'}
-                      </button>
-                    ))}
                   </div>
                 </div>
               )}
