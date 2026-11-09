@@ -18,7 +18,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- SISTEMA DE SÍNTESE SONORA E SONS DE ANIMAIS ---
+    // --- SISTEMA DE ÁUDIO E VOZ REAL DOS ANIMAIS ---
     class SensoryAudio {
       constructor() {
         this.ctx = null;
@@ -74,68 +74,45 @@
         });
       }
 
-      playAnimalSound(type) {
+      // Fala o som real do animal usando síntese de voz nativa pt-BR
+      speakAnimalSound(soundText, animalName) {
         if (this.isMuted) return;
-        this.init();
         
-        switch (type) {
-          case 'cavalo':
-            for (let i = 0; i < 4; i++) {
-              setTimeout(() => {
-                this.playTone(600 - (i * 80), 'sawtooth', 0.1, 0.15);
-              }, i * 60);
-            }
-            break;
-          case 'vaca':
-            this.playTone(130, 'triangle', 0.9, 0.2);
-            break;
-          case 'cachorro':
-            this.playTone(280, 'sawtooth', 0.15, 0.2);
-            setTimeout(() => this.playTone(320, 'sawtooth', 0.15, 0.2), 200);
-            break;
-          case 'gato':
-            this.playTone(550, 'sine', 0.2, 0.15);
-            setTimeout(() => this.playTone(450, 'sine', 0.3, 0.15), 180);
-            break;
-          case 'leao':
-            this.playTone(90, 'sawtooth', 0.8, 0.3);
-            break;
-          case 'elefante':
-            this.playTone(450, 'sawtooth', 0.6, 0.25);
-            break;
-          case 'galo':
-            this.playTone(500, 'sine', 0.2, 0.2);
-            setTimeout(() => this.playTone(750, 'sine', 0.4, 0.25), 200);
-            break;
-          case 'ovelha':
-            this.playTone(220, 'sawtooth', 0.5, 0.2);
-            break;
-          case 'pato':
-            this.playTone(300, 'square', 0.15, 0.15);
-            setTimeout(() => this.playTone(280, 'square', 0.15, 0.15), 150);
-            break;
-          case 'porco':
-            this.playTone(180, 'square', 0.1, 0.2);
-            setTimeout(() => this.playTone(160, 'square', 0.1, 0.2), 120);
-            break;
-          case 'macaco':
-            this.playTone(600, 'sine', 0.1, 0.15);
-            setTimeout(() => this.playTone(800, 'sine', 0.1, 0.15), 120);
-            setTimeout(() => this.playTone(600, 'sine', 0.1, 0.15), 240);
-            break;
-          case 'coruja':
-            this.playTone(350, 'sine', 0.3, 0.15);
-            setTimeout(() => this.playTone(300, 'sine', 0.4, 0.15), 350);
-            break;
-          default:
-            this.playPop();
+        // Toca vinheta de efeito sonoro
+        this.playPop(1.4);
+
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel(); // Para qualquer áudio anterior
+          
+          const utterance = new SpeechSynthesisUtterance(`${animalName}! ${soundText}!`);
+          utterance.lang = 'pt-BR';
+          utterance.rate = 0.9;
+          utterance.pitch = 1.1;
+
+          window.speechSynthesis.speak(utterance);
         }
       }
     }
 
     const audioSystem = new SensoryAudio();
 
-    // --- BANCO DE DESENHOS PRECISOS PARA O LIGUE OS PONTOS ---
+    // --- LISTA DE ANIMAIS COM SOM E FRASE REAL ---
+    const animalSoundsList = [
+      { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Riiiii-hóóó!' },
+      { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Muuu-muuu!' },
+      { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Au Au Au!' },
+      { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miau-miau!' },
+      { id: 'leao', name: 'Leão', emoji: '🦁', soundText: 'Rrrrroaaarrr!' },
+      { id: 'elefante', name: 'Elefante', emoji: '🐘', soundText: 'Fuuu-uuhhh!' },
+      { id: 'galo', name: 'Galo', emoji: '🐓', soundText: 'Coo-coo-ri-cooo!' },
+      { id: 'ovelha', name: 'Ovelha', emoji: '🐑', soundText: 'Meee-meee!' },
+      { id: 'pato', name: 'Pato', emoji: '🦆', soundText: 'Quack Quack!' },
+      { id: 'porco', name: 'Porco', emoji: '🐷', soundText: 'Oinc Oinc!' },
+      { id: 'macaco', name: 'Macaco', emoji: '🐵', soundText: 'Uh-uh-ah-ah!' },
+      { id: 'coruja', name: 'Coruja', emoji: '🦉', soundText: 'Uuu-uuu!' }
+    ];
+
+    // --- BANCO DE DESENHOS PARA O LIGUE OS PONTOS ---
     const dotToDotData = {
       'Carros & Motos': [
         {
@@ -243,7 +220,7 @@
             { id: 3, x: 285, y: 110 },
             { id: 4, x: 290, y: 170 },
             { id: 5, x: 260, y: 235 },
-            { id: 6, x: 200, y: 270 },
+            { id: 6, x: 200, y: 280 },
             { id: 7, x: 140, y: 235 },
             { id: 8, x: 110, y: 170 },
             { id: 9, x: 115, y: 110 },
@@ -272,7 +249,6 @@
       const [supportLevel, setSupportLevel] = useState(2);
       const [themeMode, setThemeMode] = useState('pastel');
       const [isMuted, setIsMuted] = useState(false);
-      const [reduceMotion, setReduceMotion] = useState(false);
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
 
@@ -452,27 +428,13 @@
         }
       };
 
-      // Sons Animais
-      const animalSoundsList = [
-        { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Riiiii-hó!' },
-        { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Muuuuu!' },
-        { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Au Au!' },
-        { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miau!' },
-        { id: 'leao', name: 'Leão', emoji: '🦁', soundText: 'Rrrrroaaoo!' },
-        { id: 'elefante', name: 'Elefante', emoji: '🐘', soundText: 'Fuuuu-uuh!' },
-        { id: 'galo', name: 'Galo', emoji: '🐓', soundText: 'Cocoricoo!' },
-        { id: 'ovelha', name: 'Ovelha', emoji: '🐑', soundText: 'Meeeee!' },
-        { id: 'pato', name: 'Pato', emoji: '🦆', soundText: 'Quack Quack!' },
-        { id: 'porco', name: 'Porco', emoji: '🐷', soundText: 'Oinc Oinc!' },
-        { id: 'macaco', name: 'Macaco', emoji: '🐵', soundText: 'Uh uh ah ah!' },
-        { id: 'coruja', name: 'Coruja', emoji: '🦉', soundText: 'Uuuh Uuuh!' }
-      ];
+      // Sons dos Animais
       const [activeAnimalSound, setActiveAnimalSound] = useState(null);
 
       const triggerAnimalSound = (animal) => {
         setActiveAnimalSound(animal);
-        audioSystem.playAnimalSound(animal.id);
-        setTimeout(() => setActiveAnimalSound(null), 1200);
+        audioSystem.speakAnimalSound(animal.soundText, animal.name);
+        setTimeout(() => setActiveAnimalSound(null), 1800);
       };
 
       useEffect(() => {
@@ -573,7 +535,7 @@
                           height: `${b.size}px`,
                           backgroundColor: b.color
                         }}
-                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
+                        className="absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform animate-bounce"
                       />
                     ))}
                     <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
@@ -609,7 +571,7 @@
                     >
                       <div className="text-4xl mb-3">🎴</div>
                       <h2 className="text-xl font-bold mb-1">3. Jogo da Memória</h2>
-                      <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos super variados!</p>
+                      <p className="text-sm opacity-75">Encontre os pares entre dezenas de elementos variados!</p>
                     </button>
 
                     <button 
@@ -618,7 +580,7 @@
                     >
                       <div className="text-4xl mb-3">🔊</div>
                       <h2 className="text-xl font-bold mb-1">4. Sons dos Animais</h2>
-                      <p className="text-sm opacity-75">Toque nos animais para ouvir o som característico!</p>
+                      <p className="text-sm opacity-75">Clique para ouvir a voz real e o som característico dos animais!</p>
                     </button>
 
                     <button 
@@ -642,6 +604,43 @@
                 </div>
               )}
 
+              {/* 4. SOM DOS ANIMAIS (REFEITO COM ÁUDIO REAL) */}
+              {activeModule === 'animal-sounds' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <div>
+                    <h2 className="text-2xl font-bold">🔊 Sons dos Animais em Voz Alta</h2>
+                    <p className="text-sm opacity-75">Clique em qualquer animal abaixo para ouvir o som que ele faz com narração em português!</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {animalSoundsList.map((animal) => {
+                      const isActive = activeAnimalSound?.id === animal.id;
+
+                      return (
+                        <button
+                          key={animal.id}
+                          onClick={() => triggerAnimalSound(animal)}
+                          className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center gap-2 select-none ${
+                            isActive 
+                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-xl ring-4 ring-emerald-300' 
+                              : 'border-slate-100 bg-white hover:border-emerald-200 hover:scale-102 shadow-sm'
+                          }`}
+                        >
+                          <div className={`text-6xl transition-transform ${isActive ? 'animate-bounce scale-110' : ''}`}>
+                            {animal.emoji}
+                          </div>
+                          <div className="font-bold text-lg text-slate-800">{animal.name}</div>
+                          <div className={`text-xs font-black px-3 py-1 rounded-full transition-colors ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                            {animal.soundText}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* OUTROS MÓDULOS */}
               {activeModule === 'dot-to-dot' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -729,7 +728,7 @@
                     })}
 
                     {isDrawingCompleted && (
-                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center animate-fade-in">
+                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-xs flex flex-col items-center justify-center">
                         <div className="bg-white p-6 rounded-3xl shadow-2xl text-center space-y-2 border-4 border-emerald-400">
                           <div className="text-6xl animate-bounce">{currentDrawing.emoji}</div>
                           <h3 className="text-2xl font-black text-emerald-800">Parabéns! Desenho Concluído!</h3>
@@ -874,41 +873,6 @@
                       <h3 className="text-xl font-black text-emerald-900">🏆 Incrível! Você encontrou todos os pares em {memoryMoves} jogadas!</h3>
                     </div>
                   )}
-                </div>
-              )}
-
-              {activeModule === 'animal-sounds' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div>
-                    <h2 className="text-2xl font-bold">🔊 Sons dos Animais</h2>
-                    <p className="text-sm opacity-75">Clique em cada animal para ouvir o som que ele faz!</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {animalSoundsList.map((animal) => {
-                      const isActive = activeAnimalSound?.id === animal.id;
-
-                      return (
-                        <button
-                          key={animal.id}
-                          onClick={() => triggerAnimalSound(animal)}
-                          className={`p-6 rounded-3xl border-4 text-center transition-all flex flex-col items-center justify-center gap-2 select-none ${
-                            isActive 
-                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-xl ring-4 ring-emerald-300' 
-                              : 'border-slate-100 bg-white hover:border-emerald-200 hover:scale-102 shadow-sm'
-                          }`}
-                        >
-                          <div className={`text-6xl transition-transform ${isActive ? 'animate-bounce' : ''}`}>
-                            {animal.emoji}
-                          </div>
-                          <div className="font-bold text-lg text-slate-800">{animal.name}</div>
-                          <div className={`text-xs font-black px-2 py-1 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                            {animal.soundText}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
               )}
 
@@ -1080,7 +1044,6 @@
       );
     }
 
-    // Inicialização do React 18 usando createRoot
     const container = document.getElementById('root');
     const root = ReactDOM.createRoot(container);
     root.render(<App />);
