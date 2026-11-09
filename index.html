@@ -7,198 +7,65 @@
   <!-- React 18 UMD -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Babel Standalone -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-amber-50 text-slate-800 font-sans">
   <div id="root"></div>
 
-  <script type="text/babel" data-presets="react">
-    const { useState, useEffect, useRef } = React;
+  <script>
+    const { useState, useEffect, useRef, createElement: e } = React;
 
-    // --- SÍNTESE ACÚSTICA PARA SONS DE ANIMAIS E EFEITOS ---
-    class OrganicAnimalAudio {
+    // --- SÍNTESE ACÚSTICA ---
+    class OrganicAudio {
       constructor() {
         this.ctx = null;
         this.isMuted = false;
       }
-
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioContext();
         }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
       }
-
       playTone(freq = 440, type = 'sine', duration = 0.3, volume = 0.1) {
         if (this.isMuted) return;
         try {
           this.init();
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-
           osc.type = type;
           osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
           gain.gain.setValueAtTime(0, this.ctx.currentTime);
           gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-
           osc.connect(gain);
           gain.connect(this.ctx.destination);
-
           osc.start();
           osc.stop(this.ctx.currentTime + duration);
-        } catch (e) {
-          console.error("Audio error", e);
-        }
+        } catch (err) {}
       }
-
-      playPop(pitchMultiplier = 1) {
-        if (this.isMuted) return;
-        const baseFreq = 320 * pitchMultiplier;
-        this.playTone(baseFreq, 'sine', 0.15, 0.12);
-      }
-
+      playPop() { this.playTone(320, 'sine', 0.15, 0.12); }
       playError() {
-        if (this.isMuted) return;
         this.playTone(180, 'sawtooth', 0.2, 0.15);
         setTimeout(() => this.playTone(140, 'sawtooth', 0.25, 0.15), 150);
       }
-
       playSuccess() {
-        if (this.isMuted) return;
-        const notes = [261.63, 329.63, 392.00, 523.25];
-        notes.forEach((freq, index) => {
-          setTimeout(() => {
-            this.playTone(freq, 'sine', 0.4, 0.08);
-          }, index * 90);
+        [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
+          setTimeout(() => this.playTone(f, 'sine', 0.4, 0.08), i * 90);
         });
-      }
-
-      playOrganicAnimalSound(type) {
-        if (this.isMuted) return;
-        this.init();
-        const now = this.ctx.currentTime;
-
-        try {
-          switch (type) {
-            case 'cavalo': {
-              const osc = this.ctx.createOscillator();
-              const gain = this.ctx.createGain();
-              const lfo = this.ctx.createOscillator();
-              const lfoGain = this.ctx.createGain();
-
-              osc.type = 'sawtooth';
-              osc.frequency.setValueAtTime(650, now);
-              osc.frequency.linearRampToValueAtTime(950, now + 0.25);
-              osc.frequency.exponentialRampToValueAtTime(400, now + 0.8);
-
-              lfo.frequency.setValueAtTime(22, now);
-              lfoGain.gain.setValueAtTime(120, now);
-              lfo.connect(osc.frequency);
-
-              gain.gain.setValueAtTime(0, now);
-              gain.gain.linearRampToValueAtTime(0.25, now + 0.1);
-              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
-
-              osc.connect(gain);
-              gain.connect(this.ctx.destination);
-
-              lfo.start(now);
-              osc.start(now);
-              lfo.stop(now + 0.85);
-              osc.stop(now + 0.85);
-              break;
-            }
-            case 'vaca': {
-              const osc = this.ctx.createOscillator();
-              const filter = this.ctx.createBiquadFilter();
-              const gain = this.ctx.createGain();
-
-              osc.type = 'sawtooth';
-              osc.frequency.setValueAtTime(115, now);
-              osc.frequency.linearRampToValueAtTime(135, now + 0.3);
-              osc.frequency.linearRampToValueAtTime(95, now + 1.2);
-
-              filter.type = 'lowpass';
-              filter.frequency.setValueAtTime(400, now);
-
-              gain.gain.setValueAtTime(0, now);
-              gain.gain.linearRampToValueAtTime(0.35, now + 0.15);
-              gain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
-
-              osc.connect(filter);
-              filter.connect(gain);
-              gain.connect(this.ctx.destination);
-
-              osc.start(now);
-              osc.stop(now + 1.25);
-              break;
-            }
-            case 'cachorro': {
-              [0, 0.22].forEach((delay) => {
-                const startTime = now + delay;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(260, startTime);
-                osc.frequency.exponentialRampToValueAtTime(130, startTime + 0.14);
-
-                gain.gain.setValueAtTime(0, startTime);
-                gain.gain.linearRampToValueAtTime(0.4, startTime + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start(startTime);
-                osc.stop(startTime + 0.15);
-              });
-              break;
-            }
-            case 'gato': {
-              const osc = this.ctx.createOscillator();
-              const gain = this.ctx.createGain();
-
-              osc.type = 'sine';
-              osc.frequency.setValueAtTime(520, now);
-              osc.frequency.linearRampToValueAtTime(720, now + 0.25);
-              osc.frequency.exponentialRampToValueAtTime(380, now + 0.6);
-
-              gain.gain.setValueAtTime(0, now);
-              gain.gain.linearRampToValueAtTime(0.2, now + 0.08);
-              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-
-              osc.connect(gain);
-              gain.connect(this.ctx.destination);
-
-              osc.start(now);
-              osc.stop(now + 0.65);
-              break;
-            }
-            default:
-              this.playPop();
-          }
-        } catch (e) {
-          console.error("Erro no som", e);
-        }
       }
     }
 
-    const audioSystem = new OrganicAnimalAudio();
+    const audioSystem = new OrganicAudio();
 
     // DADOS COMPLETE A FRASE
     const fillSentenceData = [
       {
         id: 1,
-        sentencePrefix: "Eu gosto de comer ",
-        sentenceSuffix: " no almoço.",
+        prefix: "Eu gosto de comer ",
+        suffix: " no almoço.",
         options: [
           { text: "Maçã", icon: "🍎", isCorrect: true },
           { text: "Tênis", icon: "👟", isCorrect: false },
@@ -207,8 +74,8 @@
       },
       {
         id: 2,
-        sentencePrefix: "O ",
-        sentenceSuffix: " faz au au no quintal.",
+        prefix: "O ",
+        suffix: " faz au au no quintal.",
         options: [
           { text: "Flor", icon: "🌸", isCorrect: false },
           { text: "Cachorro", icon: "🐶", isCorrect: true },
@@ -217,8 +84,8 @@
       },
       {
         id: 3,
-        sentencePrefix: "Antes de dormir, eu vou ",
-        sentenceSuffix: " meus dentes.",
+        prefix: "Antes de dormir, eu vou ",
+        suffix: " meus dentes.",
         options: [
           { text: "Escovar", icon: "🪥", isCorrect: true },
           { text: "Correr", icon: "🏃", isCorrect: false },
@@ -227,7 +94,7 @@
       }
     ];
 
-    // DADOS COMO PEDIR AJUDA
+    // DADOS PEDIR AJUDA
     const helpTasksData = [
       {
         id: 'shoes',
@@ -251,356 +118,227 @@
       }
     ];
 
-    const animalSoundsList = [
-      { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Relincho' },
-      { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Mugido' },
-      { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Latido' },
-      { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miado' }
+    const animals = [
+      { name: 'Cavalo', icon: '🐴', freq: 650 },
+      { name: 'Vaca', icon: '🐮', freq: 120 },
+      { name: 'Cachorro', icon: '🐶', freq: 260 },
+      { name: 'Gato', icon: '🐱', freq: 520 }
     ];
 
     function App() {
-      const [supportLevel, setSupportLevel] = useState(2);
-      const [themeMode, setThemeMode] = useState('pastel');
-      const [isMuted, setIsMuted] = useState(false);
-      const [activeModule, setActiveModule] = useState('home');
-      const [showParentModal, setShowParentModal] = useState(false);
+      const [module, setModule] = useState('home');
 
-      // COMPLETE A FRASE
-      const [sentenceIndex, setSentenceIndex] = useState(0);
-      const [selectedOption, setSelectedOption] = useState(null);
-      const [sentenceFeedback, setSentenceFeedback] = useState(null);
+      // Complete a Frase
+      const [sIndex, setSIndex] = useState(0);
+      const [sOpt, setSOpt] = useState(null);
+      const [sFeedback, setSFeedback] = useState(null);
 
-      const currentSentence = fillSentenceData[sentenceIndex];
+      // Pedir Ajuda
+      const [hIndex, setHIndex] = useState(0);
+      const [hFeedback, setHFeedback] = useState(null);
 
-      const handleSelectOption = (option) => {
-        setSelectedOption(option);
-        if (option.isCorrect) {
-          setSentenceFeedback('success');
-          audioSystem.playSuccess();
-        } else {
-          setSentenceFeedback('error');
-          audioSystem.playError();
-        }
-      };
-
-      const nextSentence = () => {
-        setSelectedOption(null);
-        setSentenceFeedback(null);
-        setSentenceIndex((prev) => (prev + 1) % fillSentenceData.length);
-      };
-
-      // COMO PEDIR AJUDA
-      const [taskIndex, setTaskIndex] = useState(0);
-      const [helpFeedback, setHelpFeedback] = useState(null);
-
-      const currentHelpTask = helpTasksData[taskIndex];
-
-      const handleHelpOptionClick = (option) => {
-        if (option.isHelpful) {
-          setHelpFeedback({ type: 'success', tip: option.tip });
-          audioSystem.playSuccess();
-        } else {
-          setHelpFeedback({ type: 'error', tip: option.tip });
-          audioSystem.playError();
-        }
-      };
-
-      const nextHelpTask = () => {
-        setHelpFeedback(null);
-        setTaskIndex((prev) => (prev + 1) % helpTasksData.length);
-      };
-
-      // LOUSA MÁGICA
+      // Lousa
       const canvasRef = useRef(null);
       const [isDrawing, setIsDrawing] = useState(false);
-      const [brushColor, setBrushColor] = useState('#4F46E5');
-      const [brushSize, setBrushSize] = useState(6);
-      const [isEraser, setIsEraser] = useState(false);
+      const [color, setColor] = useState('#4F46E5');
+      const [size, setSize] = useState(6);
 
       useEffect(() => {
-        if (activeModule === 'drawing-board' && canvasRef.current) {
+        if (module === 'drawing' && canvasRef.current) {
           const canvas = canvasRef.current;
           canvas.width = canvas.parentElement.clientWidth;
-          canvas.height = 380;
+          canvas.height = 360;
           const ctx = canvas.getContext('2d');
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-      }, [activeModule]);
+      }, [module]);
 
-      const startDrawing = (e) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const ctx = canvas.getContext('2d');
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      // RENDER: HOME
+      if (module === 'home') {
+        return e('div', { className: 'max-w-4xl mx-auto space-y-6' },
+          e('div', { className: 'text-center p-8 bg-white rounded-3xl shadow-md border-4 border-dashed border-pink-300' },
+            e('h1', { className: 'text-4xl font-black mb-2 text-indigo-600' }, 'Mundo Pop! & Ploft!'),
+            e('p', { className: 'font-semibold opacity-80' }, 'Escolha um jogo para aprender e se divertir!')
+          ),
+          e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+            e('button', { onClick: () => setModule('fill'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-violet-400 text-left hover:scale-102 transition' },
+              e('div', { className: 'text-4xl mb-2' }, '✍️'),
+              e('h2', { className: 'text-xl font-bold' }, 'Complete a Frase'),
+              e('p', { className: 'text-sm opacity-75' }, 'Escolha a opção correta para a história.')
+            ),
+            e('button', { onClick: () => setModule('help'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-teal-400 text-left hover:scale-102 transition' },
+              e('div', { className: 'text-4xl mb-2' }, '🤝'),
+              e('h2', { className: 'text-xl font-bold' }, 'Como Pedir Ajuda'),
+              e('p', { className: 'text-sm opacity-75' }, 'Aprenda a pedir apoio em várias tarefas.')
+            ),
+            e('button', { onClick: () => setModule('drawing'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-rose-400 text-left hover:scale-102 transition' },
+              e('div', { className: 'text-4xl mb-2' }, '🎨'),
+              e('h2', { className: 'text-xl font-bold' }, 'Lousa Mágica'),
+              e('p', { className: 'text-sm opacity-75' }, 'Desenhe tudo que vier na imaginação!')
+            ),
+            e('button', { onClick: () => setModule('animals'), className: 'p-6 bg-white rounded-3xl shadow border-b-8 border-emerald-400 text-left hover:scale-102 transition' },
+              e('div', { className: 'text-4xl mb-2' }, '🔊'),
+              e('h2', { className: 'text-xl font-bold' }, 'Sons dos Animais'),
+              e('p', { className: 'text-sm opacity-75' }, 'Ouça os sons dos bichinhos.')
+            )
+          )
+        );
+      }
 
-        ctx.beginPath();
-        ctx.moveTo(clientX - rect.left, clientY - rect.top);
-        setIsDrawing(true);
-      };
+      // RENDER: COMPLETE A FRASE
+      if (module === 'fill') {
+        const cur = fillSentenceData[sIndex];
+        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-6' },
+          e('div', { className: 'flex justify-between items-center' },
+            e('h2', { className: 'text-2xl font-bold' }, '✍️ Complete a Frase'),
+            e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
+          ),
+          e('div', { className: 'p-6 bg-slate-50 border-4 border-dashed border-violet-200 rounded-2xl text-center' },
+            e('p', { className: 'text-2xl font-black' },
+              cur.prefix,
+              e('span', { className: 'px-3 py-1 mx-2 bg-white border-b-4 border-violet-500 rounded text-violet-600' }, sOpt ? `${sOpt.icon} ${sOpt.text}` : '_____'),
+              cur.suffix
+            )
+          ),
+          e('div', { className: 'grid grid-cols-3 gap-4' },
+            cur.options.map((opt, i) => e('button', {
+              key: i,
+              onClick: () => {
+                setSOpt(opt);
+                if (opt.isCorrect) { setSFeedback('ok'); audioSystem.playSuccess(); }
+                else { setSFeedback('err'); audioSystem.playError(); }
+              },
+              className: 'p-4 border-4 rounded-2xl text-center bg-white hover:scale-105 transition'
+            }, e('div', { className: 'text-4xl' }, opt.icon), e('div', { className: 'font-bold' }, opt.text)))
+          ),
+          sFeedback === 'ok' && e('div', { className: 'p-4 bg-emerald-100 text-emerald-900 rounded-2xl text-center space-y-2' },
+            e('h3', { className: 'text-xl font-bold' }, '🎉 Parabéns! Você acertou!'),
+            e('button', { onClick: () => { setSOpt(null); setSFeedback(null); setSIndex((sIndex + 1) % fillSentenceData.length); }, className: 'px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl' }, 'Próxima Frase')
+          ),
+          sFeedback === 'err' && e('div', { className: 'p-4 bg-rose-100 text-rose-900 rounded-2xl text-center' },
+            e('h3', { className: 'font-bold' }, '🤔 Ops! Tente outra opção.')
+          )
+        );
+      }
 
-      const draw = (e) => {
-        if (!isDrawing) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const ctx = canvas.getContext('2d');
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      // RENDER: PEDIR AJUDA
+      if (module === 'help') {
+        const cur = helpTasksData[hIndex];
+        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-6' },
+          e('div', { className: 'flex justify-between items-center' },
+            e('h2', { className: 'text-2xl font-bold' }, '🤝 Como Pedir Ajuda'),
+            e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
+          ),
+          e('div', { className: 'p-4 bg-teal-50 rounded-2xl' },
+            e('h3', { className: 'text-lg font-bold text-teal-900' }, `${cur.icon} ${cur.title}`),
+            e('p', { className: 'font-semibold text-slate-700 mt-1' }, cur.prompt)
+          ),
+          e('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+            cur.options.map((opt, i) => e('button', {
+              key: i,
+              onClick: () => {
+                setHFeedback(opt);
+                if (opt.isHelpful) audioSystem.playSuccess(); else audioSystem.playError();
+              },
+              className: 'p-4 border-2 rounded-2xl text-left bg-white hover:border-teal-400 flex items-center gap-3'
+            }, e('span', { className: 'text-3xl' }, opt.icon), e('span', { className: 'font-bold' }, opt.text)))
+          ),
+          hFeedback && e('div', { className: `p-4 rounded-2xl text-center space-y-2 ${hFeedback.isHelpful ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}` },
+            e('p', { className: 'font-bold' }, hFeedback.tip),
+            e('button', { onClick: () => { setHFeedback(null); setHIndex((hIndex + 1) % helpTasksData.length); }, className: 'px-4 py-2 bg-slate-800 text-white font-bold rounded-xl' }, 'Próxima Situação')
+          )
+        );
+      }
 
-        ctx.strokeStyle = isEraser ? '#FFFFFF' : brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.lineTo(clientX - rect.left, clientY - rect.top);
-        ctx.stroke();
-      };
+      // RENDER: LOUSA MÁGICA
+      if (module === 'drawing') {
+        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-4' },
+          e('div', { className: 'flex justify-between items-center' },
+            e('h2', { className: 'text-2xl font-bold' }, '🎨 Lousa Mágica'),
+            e('div', { className: 'flex gap-2' },
+              e('button', { onClick: () => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+              }, className: 'px-3 py-1 bg-rose-500 text-white font-bold rounded-xl' }, '🗑️ Limpar'),
+              e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
+            )
+          ),
+          e('div', { className: 'flex gap-2 items-center bg-slate-100 p-2 rounded-xl' },
+            ['#4F46E5', '#EF4444', '#10B981', '#F59E0B', '#000000'].map(c => e('button', {
+              key: c,
+              onClick: () => setColor(c),
+              style: { backgroundColor: c },
+              className: `w-6 h-6 rounded-full border-2 border-white ${color === c ? 'scale-125' : ''}`
+            }))
+          ),
+          e('div', { className: 'border-4 border-indigo-200 rounded-2xl overflow-hidden' },
+            e('canvas', {
+              ref: canvasRef,
+              onMouseDown: (ev) => {
+                const ctx = canvasRef.current.getContext('2d');
+                const r = canvasRef.current.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(ev.clientX - r.left, ev.clientY - r.top);
+                setIsDrawing(true);
+              },
+              onMouseMove: (ev) => {
+                if (!isDrawing) return;
+                const ctx = canvasRef.current.getContext('2d');
+                const r = canvasRef.current.getBoundingClientRect();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = size;
+                ctx.lineTo(ev.clientX - r.left, ev.clientY - r.top);
+                ctx.stroke();
+              },
+              onMouseUp: () => setIsDrawing(false),
+              onTouchStart: (ev) => {
+                const ctx = canvasRef.current.getContext('2d');
+                const r = canvasRef.current.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(ev.touches[0].clientX - r.left, ev.touches[0].clientY - r.top);
+                setIsDrawing(true);
+              },
+              onTouchMove: (ev) => {
+                if (!isDrawing) return;
+                const ctx = canvasRef.current.getContext('2d');
+                const r = canvasRef.current.getBoundingClientRect();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = size;
+                ctx.lineTo(ev.touches[0].clientX - r.left, ev.touches[0].clientY - r.top);
+                ctx.stroke();
+              },
+              onTouchEnd: () => setIsDrawing(false),
+              className: 'w-full touch-none cursor-crosshair'
+            })
+          )
+        );
+      }
 
-      const stopDrawing = () => {
-        setIsDrawing(false);
-      };
+      // RENDER: SONS ANIMAIS
+      if (module === 'animals') {
+        return e('div', { className: 'max-w-3xl mx-auto bg-white p-6 rounded-3xl shadow space-y-6' },
+          e('div', { className: 'flex justify-between items-center' },
+            e('h2', { className: 'text-2xl font-bold' }, '🔊 Sons dos Animais'),
+            e('button', { onClick: () => setModule('home'), className: 'px-4 py-2 bg-slate-100 rounded-xl font-bold' }, '🏠 Início')
+          ),
+          e('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
+            animals.map((a, i) => e('button', {
+              key: i,
+              onClick: () => audioSystem.playTone(a.freq, 'sawtooth', 0.4, 0.2),
+              className: 'p-6 bg-slate-50 border-2 rounded-2xl text-center hover:scale-105 transition'
+            }, e('div', { className: 'text-5xl mb-2' }, a.icon), e('div', { className: 'font-bold' }, a.name)))
+          )
+        );
+      }
 
-      const clearCanvas = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        audioSystem.playPop(1.3);
-      };
+      return null;
+    }
 
-      const getThemeClass = () => {
-        if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
-        if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
-        return 'bg-amber-50/60 text-slate-800';
-      };
-
-      const getCardStyle = () => {
-        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
-        if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
-        return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
-      };
-
-      return (
-        <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
-          <div>
-            <header className="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setActiveModule('home')} 
-                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
-                >
-                  Mundo Pop! & Ploft!
-                </button>
-                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
-                  Nível {supportLevel}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {activeModule !== 'home' && (
-                  <button 
-                    onClick={() => setActiveModule('home')}
-                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition text-slate-800"
-                  >
-                    🏠 Início
-                  </button>
-                )}
-                <button 
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="p-3 rounded-xl border font-semibold transition text-slate-800"
-                >
-                  {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
-                </button>
-                <button 
-                  onClick={() => setShowParentModal(true)}
-                  className="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition"
-                >
-                  ⚙️ Ajustes
-                </button>
-              </div>
-            </header>
-
-            <main className="max-w-6xl mx-auto">
-              {/* HOMEPAGE */}
-              {activeModule === 'home' && (
-                <div className="space-y-8">
-                  <div className={`relative overflow-hidden min-h-[180px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center select-none`}>
-                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
-                      Mundo Pop! & Ploft!
-                    </h1>
-                    <p className="text-center font-medium opacity-80 z-10">
-                      Escolha uma atividade interativa para jogar e aprender! 🫧
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <button 
-                      onClick={() => setActiveModule('fill-sentence')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-violet-400`}
-                    >
-                      <div className="text-4xl mb-3">✍️</div>
-                      <h2 className="text-xl font-bold mb-1">Complete a Frase</h2>
-                      <p className="text-sm opacity-75">Escolha a imagem correta para completar a história!</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('how-to-help')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-teal-400`}
-                    >
-                      <div className="text-4xl mb-3">🤝</div>
-                      <h2 className="text-xl font-bold mb-1">Como Pedir Ajuda</h2>
-                      <p className="text-sm opacity-75">Aprenda a pedir ajuda para tênis, dentes, lanches e passeios!</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('drawing-board')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-rose-400`}
-                    >
-                      <div className="text-4xl mb-3">🎨</div>
-                      <h2 className="text-xl font-bold mb-1">Lousa Mágica (Desenho)</h2>
-                      <p className="text-sm opacity-75">Desenhe o que vier na sua imaginação com cores e pincéis!</p>
-                    </button>
-
-                    <button 
-                      onClick={() => setActiveModule('animal-sounds')}
-                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
-                    >
-                      <div className="text-4xl mb-3">🔊</div>
-                      <h2 className="text-xl font-bold mb-1">Sons dos Animais</h2>
-                      <p className="text-sm opacity-75">Toque nos animais para ouvir o som real de cada um!</p>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* MÓDULO 1: COMPLETE A FRASE */}
-              {activeModule === 'fill-sentence' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">✍️ Complete a Frase</h2>
-                    <span className="text-sm font-bold bg-violet-100 text-violet-800 px-3 py-1 rounded-xl">
-                      Frase {sentenceIndex + 1} de {fillSentenceData.length}
-                    </span>
-                  </div>
-
-                  <div className="p-6 bg-slate-50 border-4 border-dashed border-violet-200 rounded-3xl text-center">
-                    <p className="text-2xl md:text-3xl font-black text-slate-800 leading-relaxed">
-                      {currentSentence.sentencePrefix}
-                      <span className="inline-block mx-2 px-4 py-1 bg-white border-b-4 border-violet-500 rounded-xl min-w-[120px] text-violet-600 shadow-inner">
-                        {selectedOption ? `${selectedOption.icon} ${selectedOption.text}` : '_______'}
-                      </span>
-                      {currentSentence.sentenceSuffix}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {currentSentence.options.map((opt, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSelectOption(opt)}
-                        className={`p-6 rounded-2xl border-4 flex flex-col items-center justify-center gap-2 transition-all ${
-                          selectedOption?.text === opt.text
-                            ? opt.isCorrect
-                              ? 'border-emerald-500 bg-emerald-50 scale-105 shadow-lg'
-                              : 'border-red-500 bg-red-50 scale-95'
-                            : 'border-slate-200 bg-white hover:border-violet-300 hover:scale-102 shadow-sm'
-                        }`}
-                      >
-                        <span className="text-5xl">{opt.icon}</span>
-                        <span className="font-bold text-lg text-slate-800">{opt.text}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {sentenceFeedback === 'success' && (
-                    <div className="p-5 bg-emerald-100 border-2 border-emerald-400 rounded-2xl text-center space-y-3">
-                      <div className="text-4xl animate-bounce">🎉</div>
-                      <h3 className="text-2xl font-black text-emerald-900">Muito bem! Você completou certinho!</h3>
-                      <button 
-                        onClick={nextSentence}
-                        className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
-                      >
-                        Próxima Frase ➡️
-                      </button>
-                    </div>
-                  )}
-
-                  {sentenceFeedback === 'error' && (
-                    <div className="p-5 bg-rose-100 border-2 border-rose-400 rounded-2xl text-center space-y-2">
-                      <div className="text-4xl">🤔</div>
-                      <h3 className="text-xl font-bold text-rose-900">Ops! Essa palavra não se encaixa bem aqui.</h3>
-                      <p className="text-sm text-rose-700">Tente escolher outra opção para completar a frase!</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* MÓDULO 2: COMO PEDIR AJUDA */}
-              {activeModule === 'how-to-help' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">🤝 Aprendendo a Pedir Ajuda</h2>
-                    <span className="text-sm font-bold bg-teal-100 text-teal-800 px-3 py-1 rounded-xl">
-                      Situação {taskIndex + 1} de {helpTasksData.length}
-                    </span>
-                  </div>
-
-                  <div className="p-6 bg-teal-50 border-2 border-teal-200 rounded-3xl space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-4xl">{currentHelpTask.icon}</span>
-                      <h3 className="text-xl font-black text-teal-900">{currentHelpTask.title}</h3>
-                    </div>
-                    <p className="text-lg font-bold text-slate-700">{currentHelpTask.prompt}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentHelpTask.options.map((opt, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleHelpOptionClick(opt)}
-                        className={`p-6 rounded-2xl border-4 text-left flex items-start gap-4 transition-all ${
-                          opt.isHelpful 
-                            ? 'bg-white border-teal-200 hover:border-teal-400 hover:scale-[1.01]' 
-                            : 'bg-white border-slate-200 hover:border-amber-300'
-                        }`}
-                      >
-                        <span className="text-4xl">{opt.icon}</span>
-                        <div>
-                          <p className="font-bold text-base text-slate-800">{opt.text}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  {helpFeedback && (
-                    <div className={`p-5 rounded-2xl border-2 text-center space-y-3 ${
-                      helpFeedback.type === 'success' 
-                        ? 'bg-emerald-100 border-emerald-400 text-emerald-900' 
-                        : 'bg-amber-100 border-amber-400 text-amber-900'
-                    }`}>
-                      <div className="text-3xl">{helpFeedback.type === 'success' ? '🌟' : '💡'}</div>
-                      <p className="text-lg font-bold">{helpFeedback.tip}</p>
-                      <button 
-                        onClick={nextHelpTask}
-                        className={`px-6 py-2.5 font-bold text-white rounded-xl transition ${
-                          helpFeedback.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'
-                        }`}
-                      >
-                        Próxima Situação ➡️
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* MÓDULO 3: LOUSA MÁGICA */}
-              {activeModule === 'drawing-board' && (
-                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-4`}>
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">🎨 Lousa Mágica (Desenho Livre)</h2>
-
-                    <div className="flex flex-wrap items-center gap-3 bg-slate-100 p-2 rounded-2xl">
-                      <div className="flex gap-
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(e(App));
+  </script>
+</body>
+</html>
