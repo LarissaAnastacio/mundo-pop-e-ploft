@@ -1,697 +1,415 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, Volume2, VolumeX, Settings, 
-  Smile, Calendar, Palette, Hand, CheckCircle2, RotateCcw, 
-  Award, Info, Play, Home
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mundo Pop! & Ploft!</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-amber-50 text-slate-800 font-sans">
+  <div id="root"></div>
 
-// --- SISTEMA DE SÍNTESE SONORA SUAVE (Web Audio API) ---
-class SensoryAudio {
-  constructor() {
-    this.ctx = null;
-    this.isMuted = false;
-  }
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-  init() {
-    if (!this.ctx) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new AudioContext();
+    // --- SISTEMA DE SÍNTESE SONORA SUAVE ---
+    class SensoryAudio {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq = 440, type = 'sine', duration = 0.3, volume = 0.1) {
+        if (this.isMuted) return;
+        try {
+          this.init();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+          gain.gain.setValueAtTime(0, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {
+          console.error("Audio error", e);
+        }
+      }
+
+      playPop(pitchMultiplier = 1) {
+        if (this.isMuted) return;
+        const baseFreq = 320 * pitchMultiplier;
+        this.playTone(baseFreq, 'sine', 0.15, 0.12);
+      }
+
+      playSuccess() {
+        if (this.isMuted) return;
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, index) => {
+          setTimeout(() => {
+            this.playTone(freq, 'sine', 0.4, 0.08);
+          }, index * 90);
+        });
+      }
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-  }
 
-  playTone(freq = 440, type = 'sine', duration = 0.3, volume = 0.1) {
-    if (this.isMuted) return;
-    try {
-      this.init();
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
+    const audioSystem = new SensoryAudio();
 
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    function App() {
+      const [supportLevel, setSupportLevel] = useState(2);
+      const [themeMode, setThemeMode] = useState('pastel');
+      const [isMuted, setIsMuted] = useState(false);
+      const [reduceMotion, setReduceMotion] = useState(false);
+      const [activeModule, setActiveModule] = useState('home');
+      const [showParentModal, setShowParentModal] = useState(false);
 
-      gain.gain.setValueAtTime(0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+      const [bubbles, setBubbles] = useState([]);
+      useEffect(() => {
+        const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
+          id: Date.now() + i,
+          x: 10 + (i * 11) % 80,
+          y: 20 + (i * 15) % 60,
+          size: 70 + (i % 3) * 20,
+          color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6]
+        }));
+        setBubbles(initialBubbles);
+      }, []);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      const emotionsData = [
+        { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
+        { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
+        { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
+        { id: 'angry', emoji: '😡', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' }
+      ];
+      const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
 
-      osc.start();
-      osc.stop(this.ctx.currentTime + duration);
-    } catch (e) {
-      console.error("Audio error", e);
-    }
-  }
+      const initialRoutines = [
+        { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅', completed: false },
+        { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥', completed: false },
+        { id: 3, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣', completed: false },
+        { id: 4, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼', completed: false }
+      ];
+      const [routines, setRoutines] = useState(initialRoutines);
 
-  playSuccess() {
-    if (this.isMuted) return;
-    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
-    notes.forEach((freq, index) => {
-      setTimeout(() => {
-        this.playTone(freq, 'sine', 0.4, 0.08);
-      }, index * 90);
-    });
-  }
+      const colorItems = [
+        { id: 'r1', color: 'bg-rose-400 border-rose-500', name: 'Vermelho' },
+        { id: 'b1', color: 'bg-sky-400 border-sky-500', name: 'Azul' },
+        { id: 'g1', color: 'bg-emerald-400 border-emerald-500', name: 'Verde' }
+      ];
+      const [itemsToSort, setItemsToSort] = useState(colorItems);
 
-  playPop(pitchMultiplier = 1) {
-    const baseFreq = 320 * pitchMultiplier;
-    this.playTone(baseFreq, 'sine', 0.15, 0.12);
-  }
-}
+      useEffect(() => {
+        audioSystem.isMuted = isMuted;
+      }, [isMuted]);
 
-const audioSystem = new SensoryAudio();
+      const createBubble = (x, y) => {
+        const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const newBubble = {
+          id: Date.now() + Math.random(),
+          x: x || Math.random() * 80 + 10,
+          y: y || Math.random() * 70 + 15,
+          size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
+          color: randomColor
+        };
+        setBubbles(prev => [...prev.slice(-18), newBubble]);
+      };
 
-export default function App() {
-  const [supportLevel, setSupportLevel] = useState(2); // 1: Leve, 2: Moderado, 3: Elevado Suporte
-  const [themeMode, setThemeMode] = useState('pastel'); // 'pastel', 'dark', 'contrast'
-  const [isMuted, setIsMuted] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
+      const handleBubbleClick = (id) => {
+        audioSystem.playPop(0.8 + Math.random() * 0.5);
+        setBubbles(prev => prev.filter(b => b.id !== id));
+      };
 
-  const [activeModule, setActiveModule] = useState('home');
-  const [showParentModal, setShowParentModal] = useState(false);
-  const [showGithubInfo, setShowGithubInfo] = useState(false);
+      const completeRoutine = (id) => {
+        setRoutines(routines.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
+        audioSystem.playSuccess();
+      };
 
-  // --- ESTADOS DOS JOGOS ---
-  const [bubbles, setBubbles] = useState([]);
-  
-  useEffect(() => {
-    const initialBubbles = Array.from({ length: 8 }).map((_, i) => ({
-      id: i + Date.now(),
-      x: 10 + (i * 11) % 80,
-      y: 20 + (i * 15) % 60,
-      size: 70 + (i % 3) * 20,
-      color: ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'][i % 6],
-    }));
-    setBubbles(initialBubbles);
-  }, []);
+      const sortItem = (item, targetColor) => {
+        if (item.name === targetColor) {
+          audioSystem.playSuccess();
+          setItemsToSort(itemsToSort.filter(i => i.id !== item.id));
+        } else {
+          audioSystem.playTone(220, 'sine', 0.2, 0.05);
+        }
+      };
 
-  const emotionsData = [
-    { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
-    { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
-    { id: 'calm', emoji: '😌', label: 'Calmo', desc: 'Quando nosso corpo está tranquilo e relaxado' },
-    { id: 'angry', emoji: '😠', label: 'Bravo', desc: 'Quando algo incomoda e precisamos respirar fundo' },
-    { id: 'surprised', emoji: '😲', label: 'Surpreso', desc: 'Quando algo novo ou inesperado acontece' }
-  ];
-  const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
+      const getThemeClass = () => {
+        if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
+        if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
+        return 'bg-amber-50/60 text-slate-800';
+      };
 
-  const initialRoutines = [
-    { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅', completed: false },
-    { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥', completed: false },
-    { id: 3, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🍎', completed: false },
-    { id: 4, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼', completed: false },
-    { id: 5, title: 'Guardar Brinquedos', time: 'Tarde', icon: '🧸', completed: false },
-    { id: 6, title: 'Hora de Dormir', time: 'Noite', icon: '🌙', completed: false },
-  ];
-  const [routines, setRoutines] = useState(initialRoutines);
+      const getCardStyle = () => {
+        if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
+        if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
+        return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
+      };
 
-  const colorItems = [
-    { id: 'r1', color: 'bg-rose-400 border-rose-500', name: 'Vermelho' },
-    { id: 'r2', color: 'bg-rose-400 border-rose-500', name: 'Vermelho' },
-    { id: 'b1', color: 'bg-sky-400 border-sky-500', name: 'Azul' },
-    { id: 'b2', color: 'bg-sky-400 border-sky-500', name: 'Azul' },
-    { id: 'g1', color: 'bg-emerald-400 border-emerald-500', name: 'Verde' },
-    { id: 'g2', color: 'bg-emerald-400 border-emerald-500', name: 'Verde' },
-  ];
-  const [itemsToSort, setItemsToSort] = useState(colorItems);
-
-  useEffect(() => {
-    audioSystem.isMuted = isMuted;
-  }, [isMuted]);
-
-  const createBubble = (x, y) => {
-    const colors = ['#FCA5A5', '#93C5FD', '#86EFAC', '#FDE047', '#C084FC', '#F472B6'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    const newBubble = {
-      id: Date.now() + Math.random(),
-      x: x || Math.random() * 80 + 10,
-      y: y || Math.random() * 70 + 15,
-      size: supportLevel === 3 ? 100 : supportLevel === 2 ? 75 : 60,
-      color: randomColor,
-    };
-    setBubbles((prev) => [...prev.slice(-18), newBubble]);
-    audioSystem.playPop(0.8 + Math.random() * 0.5);
-  };
-
-  const handleBubbleClick = (id) => {
-    audioSystem.playPop(1.2);
-    setBubbles((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  const completeRoutine = (id) => {
-    setRoutines(routines.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
-    audioSystem.playSuccess();
-  };
-
-  const sortItem = (item, targetColor) => {
-    if (item.name === targetColor) {
-      audioSystem.playSuccess();
-      setItemsToSort(itemsToSort.filter(i => i.id !== item.id));
-    } else {
-      audioSystem.playTone(220, 'sine', 0.2, 0.05);
-    }
-  };
-
-  const resetSortGame = () => {
-    setItemsToSort(colorItems);
-  };
-
-  const getThemeClass = () => {
-    if (themeMode === 'dark') return 'bg-slate-900 text-slate-100';
-    if (themeMode === 'contrast') return 'bg-black text-yellow-300 font-bold';
-    return 'bg-amber-50/60 text-slate-800';
-  };
-
-  const getCardStyle = () => {
-    if (themeMode === 'dark') return 'bg-slate-800 border-slate-700 text-white';
-    if (themeMode === 'contrast') return 'bg-zinc-900 border-4 border-yellow-400 text-yellow-300';
-    return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
-  };
-
-  return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-300 font-sans ${getThemeClass()}`}>
-      
-      {/* --- BARRA SUPERIOR DE NAVEGAÇÃO --- */}
-      <header className={`px-4 py-3 border-b flex flex-wrap justify-between items-center gap-2 sticky top-0 z-40 ${
-        themeMode === 'contrast' ? 'border-yellow-400 bg-black' : 'border-slate-200 bg-white/80 backdrop-blur-md'
-      }`}>
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveModule('home')}>
-          <div className="p-2 bg-gradient-to-tr from-rose-400 to-teal-400 rounded-2xl text-white shadow-sm">
-            <Sparkles className="w-6 h-6 animate-pulse" />
-          </div>
+      return (
+        <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
           <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight flex items-center gap-1">
-              <span>Mundo Pop!</span>
-              <span className="text-teal-500">&</span>
-              <span>Ploft!</span>
-            </h1>
-            {supportLevel !== 3 && (
-              <p className="text-xs text-slate-500 font-medium">Jogo Interativo e Sensorial Acessível</p>
-            )}
-          </div>
-        </div>
+            <header className="flex flex-wrap items-center justify-between gap-4 mb-6 max-w-6xl mx-auto">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setActiveModule('home')} 
+                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
+                >
+                  Mundo Pop! & Ploft!
+                </button>
+                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
+                  Nível {supportLevel}
+                </span>
+              </div>
 
-        <div className="flex items-center space-x-2">
-          {activeModule !== 'home' && (
-            <button
-              onClick={() => setActiveModule('home')}
-              className="p-3 rounded-xl border bg-slate-100 border-slate-200 hover:bg-slate-200 flex items-center gap-2 font-bold text-slate-700"
-              title="Voltar ao Início"
-            >
-              <Home className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm">Início</span>
-            </button>
+              <div className="flex items-center gap-2">
+                {activeModule !== 'home' && (
+                  <button 
+                    onClick={() => setActiveModule('home')}
+                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition"
+                  >
+                    🏠 Início
+                  </button>
+                )}
+                <button 
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-3 rounded-xl border font-semibold transition"
+                >
+                  {isMuted ? '🔇 Mudo' : '🔊 Som OK'}
+                </button>
+                <button 
+                  onClick={() => setShowParentModal(true)}
+                  className="p-3 rounded-xl border bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition"
+                >
+                  ⚙️ Ajustes
+                </button>
+              </div>
+            </header>
+
+            <main className="max-w-6xl mx-auto">
+              {activeModule === 'home' && (
+                <div className="space-y-8">
+                  <div 
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
+                    }}
+                    className={`relative overflow-hidden min-h-[220px] rounded-3xl border-4 border-dashed border-pink-300 ${getCardStyle()} p-6 flex flex-col items-center justify-center cursor-pointer select-none`}
+                  >
+                    {bubbles.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBubbleClick(b.id);
+                        }}
+                        style={{
+                          left: `${b.x}%`,
+                          top: `${b.y}%`,
+                          width: `${b.size}px`,
+                          height: `${b.size}px`,
+                          backgroundColor: b.color
+                        }}
+                        className={`absolute rounded-full shadow-lg border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform ${reduceMotion ? '' : 'animate-bounce'}`}
+                      />
+                    ))}
+                    <h1 className="text-3xl md:text-5xl font-black text-center mb-2 z-10 drop-shadow-sm">
+                      Mundo Pop! & Ploft!
+                    </h1>
+                    <p className="text-center font-medium opacity-80 z-10">
+                      Clique em qualquer lugar para criar e estourar bolhas! 🫧
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <button 
+                      onClick={() => setActiveModule('bubbles')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-pink-400`}
+                    >
+                      <div className="text-4xl mb-3">🫧</div>
+                      <h2 className="text-xl font-bold mb-1">Bolhas Sensoriais</h2>
+                      <p className="text-sm opacity-75">Toque livre sem tempo ou regras. Estouro calmo e relaxante.</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('emotions')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-purple-400`}
+                    >
+                      <div className="text-4xl mb-3">😊</div>
+                      <h2 className="text-xl font-bold mb-1">Expressar Sentimentos</h2>
+                      <p className="text-sm opacity-75">Identifique e compartilhe como seu corpo está se sentindo agora.</p>
+                    </button>
+
+                    <button 
+                      onClick={() => setActiveModule('routines')}
+                      className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
+                    >
+                      <div className="text-4xl mb-3">📅</div>
+                      <h2 className="text-xl font-bold mb-1">Minha Rotina</h2>
+                      <p className="text-sm opacity-75">Guia visual de tarefas diárias para organização passo a passo.</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'bubbles' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl min-h-[400px] relative`}>
+                  <h2 className="text-2xl font-bold mb-4">🫧 Estourar Bolhas Calmas</h2>
+                  <div 
+                    className="w-full h-80 relative border-2 border-slate-200 rounded-2xl overflow-hidden bg-sky-50/30 cursor-pointer"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      createBubble(((e.clientX - rect.left) / rect.width) * 90, ((e.clientY - rect.top) / rect.height) * 80);
+                    }}
+                  >
+                    {bubbles.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBubbleClick(b.id);
+                        }}
+                        style={{
+                          left: `${b.x}%`,
+                          top: `${b.y}%`,
+                          width: `${b.size}px`,
+                          height: `${b.size}px`,
+                          backgroundColor: b.color
+                        }}
+                        className="absolute rounded-full shadow-md border-2 border-white/60 hover:scale-110 active:scale-90 transition-transform"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'emotions' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
+                  <h2 className="text-2xl font-bold">😊 Como você está se sentindo agora?</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {emotionsData.map(e => (
+                      <button
+                        key={e.id}
+                        onClick={() => {
+                          setSelectedEmotion(e);
+                          audioSystem.playPop(1.2);
+                        }}
+                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
+                      >
+                        <div className="text-5xl mb-2">{e.emoji}</div>
+                        <div className="font-bold">{e.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
+                    <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
+                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
+                  </div>
+                </div>
+              )}
+
+              {activeModule === 'routines' && (
+                <div className={`${getCardStyle()} p-6 rounded-3xl space-y-4`}>
+                  <h2 className="text-2xl font-bold mb-4">📅 Cartões de Rotina Diária</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {routines.map(r => (
+                      <div 
+                        key={r.id}
+                        onClick={() => completeRoutine(r.id)}
+                        className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-60' : 'bg-white border-slate-200'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{r.icon}</span>
+                          <div>
+                            <p className={`font-bold ${r.completed ? 'line-through' : ''}`}>{r.title}</p>
+                            <span className="text-xs text-slate-500">{r.time}</span>
+                          </div>
+                        </div>
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold ${r.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}>
+                          {r.completed ? '✓' : ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+
+          {showParentModal && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
+                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
+                
+                <div>
+                  <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3].map(lvl => (
+                      <button 
+                        key={lvl}
+                        onClick={() => setSupportLevel(lvl)}
+                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                      >
+                        Nível {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-1">Tema Visual:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['pastel', 'dark', 'contrast'].map(t => (
+                      <button 
+                        key={t}
+                        onClick={() => setThemeMode(t)}
+                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowParentModal(false)}
+                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
           )}
 
-          <button
-            onClick={() => setIsMuted(!isMuted)}
-            className={`p-3 rounded-xl border flex items-center gap-2 font-medium transition ${
-              isMuted ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            }`}
-            title={isMuted ? "Ativar Áudio" : "Silenciar Áudio"}
-            aria-label="Controle de Som"
-          >
-            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            <span className="hidden sm:inline text-sm">{isMuted ? 'Mudo' : 'Som OK'}</span>
-          </button>
-
-          <button
-            onClick={() => setShowParentModal(true)}
-            className="p-3 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 flex items-center gap-2 font-semibold"
-            title="Ajustes de Suporte e Acessibilidade"
-          >
-            <Settings className="w-5 h-5" />
-            <span className="hidden md:inline text-sm">Ajustes / Níveis</span>
-          </button>
-
-          <button
-            onClick={() => setShowGithubInfo(true)}
-            className="p-3 rounded-xl border bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 flex items-center gap-1 text-sm font-semibold"
-            title="Como publicar no GitHub Pages"
-          >
-            <Info className="w-5 h-5" />
-            <span className="hidden lg:inline">GitHub Pages</span>
-          </button>
+          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
+            <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
+          </footer>
         </div>
-      </header>
+      );
+    }
 
-      {/* --- SELETOR DE MÓDULOS --- */}
-      <nav className="p-3 max-w-5xl mx-auto w-full">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <button
-            onClick={() => setActiveModule('sensory')}
-            className={`p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-2 transition font-extrabold ${
-              activeModule === 'sensory'
-                ? 'bg-teal-500 text-white shadow-lg scale-[1.02]'
-                : getCardStyle()
-            }`}
-          >
-            <Hand className="w-6 h-6" />
-            <span className={supportLevel === 3 ? 'text-lg' : 'text-base'}>Sensorial</span>
-          </button>
-
-          <button
-            onClick={() => setActiveModule('emotions')}
-            className={`p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-2 transition font-extrabold ${
-              activeModule === 'emotions'
-                ? 'bg-indigo-500 text-white shadow-lg scale-[1.02]'
-                : getCardStyle()
-            }`}
-          >
-            <Smile className="w-6 h-6" />
-            <span className={supportLevel === 3 ? 'text-lg' : 'text-base'}>Emoções</span>
-          </button>
-
-          <button
-            onClick={() => setActiveModule('routines')}
-            className={`p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-2 transition font-extrabold ${
-              activeModule === 'routines'
-                ? 'bg-amber-500 text-white shadow-lg scale-[1.02]'
-                : getCardStyle()
-            }`}
-          >
-            <Calendar className="w-6 h-6" />
-            <span className={supportLevel === 3 ? 'text-lg' : 'text-base'}>Rotina</span>
-          </button>
-
-          <button
-            onClick={() => setActiveModule('sorting')}
-            className={`p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-2 transition font-extrabold ${
-              activeModule === 'sorting'
-                ? 'bg-rose-500 text-white shadow-lg scale-[1.02]'
-                : getCardStyle()
-            }`}
-          >
-            <Palette className="w-6 h-6" />
-            <span className={supportLevel === 3 ? 'text-lg' : 'text-base'}>Cores</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* --- ÁREA PRINCIPAL DOS JOGOS --- */}
-      <main className="flex-1 p-3 md:p-6 max-w-5xl mx-auto w-full flex flex-col justify-center">
-        
-        {/* === TELA INICIAL INTERATIVA === */}
-        {activeModule === 'home' && (
-          <div className={`flex-1 flex flex-col items-center justify-between p-6 rounded-3xl min-h-[460px] relative overflow-hidden text-center ${getCardStyle()}`}>
-            <div className="z-10 mt-6 space-y-3 pointer-events-none select-none">
-              <div className="inline-block px-4 py-1 bg-amber-100 text-amber-900 font-extrabold text-xs uppercase tracking-widest rounded-full shadow-sm mb-2">
-                Espaço Interativo Acessível
-              </div>
-              <h1 className="text-4xl md:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-teal-500 to-indigo-600 drop-shadow-sm">
-                Mundo Pop! & Ploft!
-              </h1>
-              <p className="text-base md:text-xl font-medium max-w-lg mx-auto opacity-90 text-slate-600">
-                Um lugar calmo, divertido e sem pressa para explorar sons, cores e emoções.
-              </p>
-            </div>
-
-            <div 
-              className="absolute inset-0 cursor-pointer touch-none"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                createBubble(x, y);
-              }}
-            >
-              {bubbles.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleBubbleClick(b.id);
-                  }}
-                  style={{
-                    left: `${b.x}%`,
-                    top: `${b.y}%`,
-                    width: `${b.size * (supportLevel === 3 ? 1.3 : 1)}px`,
-                    height: `${b.size * (supportLevel === 3 ? 1.3 : 1)}px`,
-                    backgroundColor: b.color,
-                  }}
-                  className={`absolute rounded-full -translate-x-1/2 -translate-y-1/2 shadow-xl border-2 border-white/40 transition-transform hover:scale-110 active:scale-90 ${
-                    reduceMotion ? '' : 'animate-bounce'
-                  }`}
-                  aria-label="Estourar Bolha Pop"
-                />
-              ))}
-            </div>
-
-            <div className="z-10 mt-auto pt-8 flex flex-col sm:flex-row gap-3 items-center">
-              <button
-                onClick={() => setActiveModule('sensory')}
-                className="px-8 py-4 bg-teal-500 hover:bg-teal-600 text-white font-black rounded-2xl text-xl shadow-lg flex items-center gap-3 transform hover:scale-105 active:scale-95 transition"
-              >
-                <Play className="w-6 h-6 fill-current" /> Começar a Jogar
-              </button>
-              
-              <button
-                onClick={() => createBubble()}
-                className="px-6 py-4 bg-white/80 hover:bg-white text-slate-700 font-bold rounded-2xl text-base shadow border border-slate-200 flex items-center gap-2"
-              >
-                <Sparkles className="w-5 h-5 text-amber-500" /> Mais Bolhas
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* === MÓDULO 1: CAUSA E EFEITO SENSORIAL === */}
-        {activeModule === 'sensory' && (
-          <div className={`flex-1 flex flex-col items-center justify-between p-4 rounded-3xl min-h-[420px] relative overflow-hidden ${getCardStyle()}`}>
-            <div className="text-center mb-2 z-10">
-              <h2 className="text-xl md:text-3xl font-bold">Toque Sensorial Calmo</h2>
-              <p className="text-sm opacity-80">Toque em qualquer lugar da tela para criar ou estourar bolhas visuais.</p>
-            </div>
-
-            <div 
-              className="absolute inset-0 cursor-pointer touch-none"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                createBubble(x, y);
-              }}
-            >
-              {bubbles.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleBubbleClick(b.id);
-                  }}
-                  style={{
-                    left: `${b.x}%`,
-                    top: `${b.y}%`,
-                    width: `${b.size * (supportLevel === 3 ? 1.4 : 1)}px`,
-                    height: `${b.size * (supportLevel === 3 ? 1.4 : 1)}px`,
-                    backgroundColor: b.color,
-                  }}
-                  className={`absolute rounded-full -translate-x-1/2 -translate-y-1/2 shadow-lg transition-transform hover:scale-110 active:scale-95 ${
-                    reduceMotion ? '' : 'animate-bounce'
-                  }`}
-                  aria-label="Bolha Sensorial"
-                />
-              ))}
-            </div>
-
-            <div className="z-10 mt-auto pt-4 flex gap-4">
-              <button
-                onClick={() => createBubble()}
-                className="px-6 py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-lg shadow-md flex items-center gap-2"
-              >
-                <Sparkles className="w-6 h-6" /> Criar Bolha
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* === MÓDULO 2: EMOÇÕES === */}
-        {activeModule === 'emotions' && (
-          <div className={`p-6 rounded-3xl ${getCardStyle()} space-y-6`}>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold">Como você está se sentindo?</h2>
-              {supportLevel < 3 && (
-                <p className="text-sm opacity-80 mt-1">Clique na emoção para aprender sobre ela sem pressa.</p>
-              )}
-            </div>
-
-            <div className="flex flex-col items-center justify-center p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100 text-slate-800">
-              <span className="text-8xl md:text-9xl mb-3 animate-pulse">{selectedEmotion.emoji}</span>
-              <h3 className="text-3xl font-extrabold text-indigo-900">{selectedEmotion.label}</h3>
-              {supportLevel !== 3 && (
-                <p className="text-base text-center max-w-md mt-2 font-medium">{selectedEmotion.desc}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              {emotionsData.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedEmotion(item);
-                    audioSystem.playPop(1.1);
-                  }}
-                  className={`p-4 rounded-2xl flex flex-col items-center justify-center transition border-2 ${
-                    selectedEmotion.id === item.id
-                      ? 'border-indigo-600 bg-indigo-100 scale-105 shadow-md'
-                      : 'border-transparent bg-slate-100/80 hover:bg-slate-200'
-                  }`}
-                >
-                  <span className="text-4xl sm:text-5xl">{item.emoji}</span>
-                  {supportLevel <= 2 && (
-                    <span className="text-xs sm:text-sm font-bold mt-2 text-slate-700">{item.label}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* === MÓDULO 3: ROTINA === */}
-        {activeModule === 'routines' && (
-          <div className={`p-6 rounded-3xl ${getCardStyle()} space-y-4`}>
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold">Minha Rotina do Dia</h2>
-                <p className="text-sm opacity-80">Marque as tarefas concluídas no seu tempo.</p>
-              </div>
-              <button
-                onClick={() => setRoutines(initialRoutines)}
-                className="p-2 text-slate-500 hover:text-slate-700 flex items-center gap-1 text-xs font-semibold"
-              >
-                <RotateCcw className="w-4 h-4" /> Reiniciar
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {routines.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => completeRoutine(item.id)}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center space-x-4 transition ${
-                    item.completed
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900 opacity-90'
-                      : 'bg-white border-slate-200 hover:border-amber-400'
-                  }`}
-                >
-                  <span className="text-4xl">{item.icon}</span>
-                  <div className="flex-1">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{item.time}</span>
-                    <h3 className={`font-bold ${item.completed ? 'line-through text-emerald-800' : 'text-slate-800'}`}>
-                      {item.title}
-                    </h3>
-                  </div>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                    item.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'
-                  }`}>
-                    {item.completed && <CheckCircle2 className="w-5 h-5" />}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* === MÓDULO 4: CLASSIFICAÇÃO DE CORES === */}
-        {activeModule === 'sorting' && (
-          <div className={`p-6 rounded-3xl ${getCardStyle()} space-y-6 text-center`}>
-            <div>
-              <h2 className="text-2xl font-bold">Separação de Cores</h2>
-              <p className="text-sm opacity-80">Clique no objeto e depois na caixa da mesma cor.</p>
-            </div>
-
-            {itemsToSort.length === 0 ? (
-              <div className="p-8 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-4">
-                <Award className="w-16 h-16 text-emerald-600 mx-auto animate-bounce" />
-                <h3 className="text-2xl font-extrabold text-emerald-800">Muito Bem! Parabéns!</h3>
-                <p className="text-emerald-700">Você organizou todas as cores com sucesso.</p>
-                <button
-                  onClick={resetSortGame}
-                  className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow hover:bg-emerald-700 transition"
-                >
-                  Jogar Novamente
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
-                  {['Vermelho', 'Azul', 'Verde'].map((colorName) => {
-                    const bgColor = colorName === 'Vermelho' ? 'bg-rose-100 border-rose-300 text-rose-800' :
-                                    colorName === 'Azul' ? 'bg-sky-100 border-sky-300 text-sky-800' :
-                                    'bg-emerald-100 border-emerald-300 text-emerald-800';
-                    return (
-                      <div
-                        key={colorName}
-                        className={`p-6 rounded-2xl border-4 border-dashed flex flex-col items-center justify-center min-h-[120px] ${bgColor}`}
-                      >
-                        <span className="font-bold text-lg">{colorName}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-slate-100">
-                  {itemsToSort.map((item) => (
-                    <div key={item.id} className="flex flex-col items-center gap-2">
-                      <div className={`w-16 h-16 rounded-2xl ${item.color} shadow-md flex items-center justify-center text-white font-bold text-xs`}>
-                        {supportLevel <= 2 && item.name}
-                      </div>
-                      <div className="flex gap-1">
-                        {['Vermelho', 'Azul', 'Verde'].map((targetColor) => (
-                          <button
-                            key={targetColor}
-                            onClick={() => sortItem(item, targetColor)}
-                            className="px-2 py-1 text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-md"
-                          >
-                            {targetColor[0]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* --- MODAL DE AJUSTES --- */}
-      {showParentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 text-slate-800 shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Settings className="w-5 h-5 text-indigo-600" />
-                Painel de Suporte e Acessibilidade
-              </h3>
-              <button
-                onClick={() => setShowParentModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-bold text-sm text-slate-700 block">Nível de Suporte (TEA):</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setSupportLevel(1)}
-                  className={`p-3 rounded-xl border text-xs sm:text-sm font-bold ${
-                    supportLevel === 1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  Nível 1 (Leve)
-                </button>
-                <button
-                  onClick={() => setSupportLevel(2)}
-                  className={`p-3 rounded-xl border text-xs sm:text-sm font-bold ${
-                    supportLevel === 2 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  Nível 2 (Moderado)
-                </button>
-                <button
-                  onClick={() => setSupportLevel(3)}
-                  className={`p-3 rounded-xl border text-xs sm:text-sm font-bold ${
-                    supportLevel === 3 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  Nível 3 (Elevado)
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-bold text-sm text-slate-700 block">Tema Visual:</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setThemeMode('pastel')}
-                  className={`p-3 rounded-xl border text-xs font-bold ${
-                    themeMode === 'pastel' ? 'bg-amber-200 border-amber-400 text-amber-900' : 'bg-slate-50'
-                  }`}
-                >
-                  Pastel Calmo
-                </button>
-                <button
-                  onClick={() => setThemeMode('dark')}
-                  className={`p-3 rounded-xl border text-xs font-bold ${
-                    themeMode === 'dark' ? 'bg-slate-800 text-white border-slate-700' : 'bg-slate-50'
-                  }`}
-                >
-                  Modo Escuro
-                </button>
-                <button
-                  onClick={() => setThemeMode('contrast')}
-                  className={`p-3 rounded-xl border text-xs font-bold ${
-                    themeMode === 'contrast' ? 'bg-black text-yellow-300 border-yellow-400' : 'bg-slate-50'
-                  }`}
-                >
-                  Alto Contraste
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-              <span className="text-sm font-bold text-slate-700">Reduzir Animações / Movimentos</span>
-              <input
-                type="checkbox"
-                checked={reduceMotion}
-                onChange={(e) => setReduceMotion(e.target.checked)}
-                className="w-5 h-5 accent-indigo-600 rounded"
-              />
-            </div>
-
-            <button
-              onClick={() => setShowParentModal(false)}
-              className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition"
-            >
-              Salvar e Concluir
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL GITHUB PAGES --- */}
-      {showGithubInfo && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 text-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-amber-700">
-                <Info className="w-5 h-5" /> Como Publicar no GitHub Pages
-              </h3>
-              <button
-                onClick={() => setShowGithubInfo(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <ol className="list-decimal list-inside text-sm space-y-2 text-slate-700 font-medium">
-              <li>Crie um repositório no <strong>GitHub</strong>.</li>
-              <li>Instale as dependências React necessárias.</li>
-              <li>Cole o código deste arquivo em <code>App.jsx</code>.</li>
-              <li>Ative o <strong>GitHub Pages</strong> em Settings.</li>
-            </ol>
-
-            <button
-              onClick={() => setShowGithubInfo(false)}
-              className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition"
-            >
-              Entendido!
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --- RODAPÉ COM ANO DINÂMICO --- */}
-      <footer className="p-4 text-center text-xs sm:text-sm font-semibold opacity-75 border-t border-slate-200/50">
-        <p>&copy; {new Date().getFullYear()} Larissa da Silva Anastácio. Todos os direitos reservados.</p>
-      </footer>
-    </div>
-  );
-}
+    ReactDOM.render(<App />, document.getElementById('root'));
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
