@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mundo Pop! & Ploft!</title>
+  
+  <!-- Domínio Oficial -->
+  <link rel="canonical" href="https://mundo-pop-e-ploft.link" />
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-84121679402445496" crossorigin="anonymous"></script>
+
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -36,7 +43,6 @@
         }
       }
 
-      // SELECIONA A MELHOR VOZ EM PORTUGUÊS DISPONÍVEL NO DISPOSITIVO
       initVoices() {
         if (!('speechSynthesis' in window)) return;
         
@@ -55,7 +61,6 @@
         }
       }
 
-      // REPRODUÇÃO DA FALA NATIVA (FALA APENAS O NOME DO ANIMAL COM PRONÚNCIA CLARA)
       speak(text) {
         if (this.isMuted || !('speechSynthesis' in window)) return;
         
@@ -370,7 +375,6 @@
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
 
-      // --- UNLOCK DE ÁUDIO NO PRIMEIRO CLIQUE ---
       useEffect(() => {
         const unlockAudio = () => {
           audioSystem.init();
@@ -382,7 +386,6 @@
         window.addEventListener('click', unlockAudio, { once: true });
       }, []);
 
-      // --- BOLHAS BANNER HOMEPAGE E MÓDULO EXCLUSIVO ---
       const [bubbles, setBubbles] = useState([]);
       const [calmBubbles, setCalmBubbles] = useState([]);
 
@@ -457,7 +460,6 @@
         setCalmBubbles(prev => [...prev, newBubble]);
       };
 
-      // --- ESTADOS DE COMPLETE A FRASE ---
       const [sentenceIndex, setSentenceIndex] = useState(0);
       const [selectedOption, setSelectedOption] = useState(null);
       const [sentenceFeedback, setSentenceFeedback] = useState(null);
@@ -481,7 +483,6 @@
         setSentenceIndex((prev) => (prev + 1) % fillSentenceData.length);
       };
 
-      // --- ESTADOS DE COMO PEDIR AJUDA ---
       const [taskIndex, setTaskIndex] = useState(0);
       const [helpFeedback, setHelpFeedback] = useState(null);
 
@@ -497,7 +498,6 @@
         setTaskIndex((prev) => (prev + 1) % helpTasksData.length);
       };
 
-      // --- ESTADOS DA LOUSA MÁGICA ---
       const canvasRef = useRef(null);
       const [isDrawing, setIsDrawing] = useState(false);
       const [brushColor, setBrushColor] = useState('#4F46E5');
@@ -558,7 +558,6 @@
         audioSystem.playPop(1.3);
       };
 
-      // --- EXPRESSAR SENTIMENTOS ---
       const emotionsData = [
         { id: 'happy', emoji: '😊', label: 'Feliz', desc: 'Quando nos sentimos sorridentes e contentes' },
         { id: 'sad', emoji: '😢', label: 'Triste', desc: 'Quando precisamos de um abraço ou descanso' },
@@ -567,7 +566,6 @@
       ];
       const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
 
-      // --- ROTINA COMPLETA ---
       const initialRoutines = [
         { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅' },
         { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥' },
@@ -611,7 +609,6 @@
         audioSystem.playSuccess();
       };
 
-      // --- LIGUE OS PONTOS ---
       const [dotCategory, setDotCategory] = useState('Carros & Motos');
       const [selectedDrawingIndex, setSelectedDrawingIndex] = useState(0);
       const [nextDot, setNextDot] = useState(1);
@@ -639,7 +636,6 @@
         setIsDrawingCompleted(false);
       };
 
-      // --- QUEBRA-CABEÇA ---
       const [puzzleSize, setPuzzleSize] = useState(3);
       const [puzzleImage, setPuzzleImage] = useState('🚗');
       const [puzzlePieces, setPuzzlePieces] = useState([]);
@@ -683,7 +679,6 @@
         }
       };
 
-      // --- JOGO DA MEMÓRIA ---
       const [memoryCards, setMemoryCards] = useState([]);
       const [flippedCards, setFlippedCards] = useState([]);
       const [matchedCards, setMatchedCards] = useState([]);
@@ -731,9 +726,7 @@
         }
       };
 
-      // --- NOME DOS ANIMAIS (AMPLIADO COM ANIMAIS CONHECIDOS) ---
       const animalSoundsList = [
-        // Domésticos & Fazenda
         { id: 'cachorro', name: 'Cachorro', emoji: '🐶' },
         { id: 'gato', name: 'Gato', emoji: '🐱' },
         { id: 'vaca', name: 'Vaca', emoji: '🐮' },
@@ -748,7 +741,6 @@
         { id: 'peru', name: 'Peru', emoji: '🦃' },
         { id: 'coelho', name: 'Coelho', emoji: '🐰' },
         { id: 'hamster', name: 'Hamster', emoji: '🐹' },
-        // Selvagens & Floresta
         { id: 'leao', name: 'Leão', emoji: '🦁' },
         { id: 'tigre', name: 'Tigre', emoji: '🐯' },
         { id: 'urso', name: 'Urso', emoji: '🐻' },
@@ -767,7 +759,6 @@
         { id: 'panda', name: 'Panda', emoji: '🐼' },
         { id: 'preguica', name: 'Bicho-Preguiça', emoji: '🦥' },
         { id: 'gambá', name: 'Gambá', emoji: '🦨' },
-        // Aves & Voadores
         { id: 'coruja', name: 'Coruja', emoji: '🦉' },
         { id: 'aguia', name: 'Águia', emoji: '🦅' },
         { id: 'papagaio', name: 'Papagaio', emoji: '🦜' },
@@ -776,7 +767,6 @@
         { id: 'flamingo', name: 'Flamingo', emoji: '🦩' },
         { id: 'cisne', name: 'Cisne', emoji: '🦢' },
         { id: 'morcego', name: 'Morcego', emoji: '🦇' },
-        // Aquáticos & Marinhos
         { id: 'baleia', name: 'Baleia', emoji: '🐳' },
         { id: 'golfinho', name: 'Golfinho', emoji: '🐬' },
         { id: 'tubarao', name: 'Tubarão', emoji: '🦈' },
@@ -785,7 +775,6 @@
         { id: 'caranguejo', name: 'Caranguejo', emoji: '🦀' },
         { id: 'foca', name: 'Foca', emoji: '🦭' },
         { id: 'tartaruga', name: 'Tartaruga', emoji: '🐢' },
-        // Répteis & Anfíbios
         { id: 'sapo', name: 'Sapo', emoji: '🐸' },
         { id: 'jacare', name: 'Jacaré', emoji: '🐊' },
         { id: 'cobra', name: 'Cobra', emoji: '🐍' },
@@ -1015,7 +1004,7 @@
                 </div>
               )}
 
-              {/* MÓDULO NOME DOS ANIMAIS (COM TODOS OS ANIMAIS CONHECIDOS) */}
+              {/* MÓDULO NOME DOS ANIMAIS */}
               {activeModule === 'animal-sounds' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div>
