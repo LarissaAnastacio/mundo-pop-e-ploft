@@ -15,28 +15,11 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- CAMINHOS DOS ARQUIVOS MP3 LOCAIS ---
-    const ANIMAL_AUDIO_FILES = {
-      coruja: 'mp3/coruja.mp3',
-      macaco: 'mp3/macaco.mp3',
-      porco: 'mp3/porco.mp3',
-      pato: 'mp3/pato.mp3',
-      ovelha: 'mp3/ovelha.mp3',
-      galo: 'mp3/galo.mp3',
-      elefante: 'mp3/elefante.mp3',
-      leao: 'mp3/leao.mp3',
-      cachorro: 'mp3/cachorro.mp3',
-      gato: 'mp3/gato.mp3',
-      vaca: 'mp3/vaca.mp3',
-      cavalo: 'mp3/cavalo.mp3'
-    };
-
-    // --- SISTEMA DE ÁUDIO MULTICAMADA E VOZ NATIVA ---
+    // --- SISTEMA DE ÁUDIO E VOZ NATIVA ---
     class SensoryAudio {
       constructor() {
         this.ctx = null;
         this.isMuted = false;
-        this.currentAudio = null;
       }
 
       init() {
@@ -51,10 +34,10 @@
         }
       }
 
-      // REPRODUÇÃO DE VOZ NATIVA DO NAVEGADOR (GARANTIA DE SOM EM QUALQUER DISPOSITIVO)
+      // REPRODUÇÃO DE VOZ NATIVA DO NAVEGADOR (FALA APENAS O NOME DO ANIMAL)
       speak(text) {
         if (this.isMuted || !('speechSynthesis' in window)) return;
-        window.speechSynthesis.cancel(); // Para qualquer fala anterior
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'pt-BR';
         utterance.rate = 1.0;
@@ -108,179 +91,13 @@
         });
       }
 
-      playSynthAnimalSound(animalId) {
-        if (this.isMuted) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        switch (animalId) {
-          case 'coruja':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(380, now);
-            osc.frequency.exponentialRampToValueAtTime(260, now + 0.5);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            osc.start(now);
-            osc.stop(now + 0.5);
-            break;
-          case 'macaco':
-            for (let i = 0; i < 4; i++) {
-              const o = this.ctx.createOscillator();
-              const g = this.ctx.createGain();
-              o.type = 'triangle';
-              o.frequency.setValueAtTime(600 + (i % 2 * 250), now + (i * 0.1));
-              g.gain.setValueAtTime(0.15, now + (i * 0.1));
-              g.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.1) + 0.08);
-              o.connect(g);
-              g.connect(this.ctx.destination);
-              o.start(now + (i * 0.1));
-              o.stop(now + (i * 0.1) + 0.08);
-            }
-            break;
-          case 'porco':
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(140, now);
-            gain.gain.setValueAtTime(0.18, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
-            break;
-          case 'pato':
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(300, now);
-            osc.frequency.linearRampToValueAtTime(240, now + 0.15);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.start(now);
-            osc.stop(now + 0.15);
-            break;
-          case 'ovelha':
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(220, now);
-            osc.frequency.linearRampToValueAtTime(200, now + 0.4);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-            osc.start(now);
-            osc.stop(now + 0.4);
-            break;
-          case 'galo':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(400, now);
-            osc.frequency.exponentialRampToValueAtTime(750, now + 0.3);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-            osc.start(now);
-            osc.stop(now + 0.4);
-            break;
-          case 'elefante':
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(480, now);
-            osc.frequency.linearRampToValueAtTime(580, now + 0.6);
-            gain.gain.setValueAtTime(0.25, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-            osc.start(now);
-            osc.stop(now + 0.6);
-            break;
-          case 'leao':
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(90, now);
-            osc.frequency.linearRampToValueAtTime(70, now + 0.8);
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-            osc.start(now);
-            osc.stop(now + 0.8);
-            break;
-          case 'cachorro':
-            for (let i = 0; i < 2; i++) {
-              const o = this.ctx.createOscillator();
-              const g = this.ctx.createGain();
-              o.type = 'sawtooth';
-              o.frequency.setValueAtTime(280 + (i * 40), now + (i * 0.18));
-              g.gain.setValueAtTime(0.2, now + (i * 0.18));
-              g.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.18) + 0.12);
-              o.connect(g);
-              g.connect(this.ctx.destination);
-              o.start(now + (i * 0.18));
-              o.stop(now + (i * 0.18) + 0.12);
-            }
-            break;
-          case 'gato':
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(500, now);
-            osc.frequency.linearRampToValueAtTime(400, now + 0.35);
-            gain.gain.setValueAtTime(0.18, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-            osc.start(now);
-            osc.stop(now + 0.35);
-            break;
-          case 'vaca':
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(120, now);
-            gain.gain.setValueAtTime(0.25, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
-            osc.start(now);
-            osc.stop(now + 0.9);
-            break;
-          case 'cavalo':
-            for (let i = 0; i < 4; i++) {
-              const o = this.ctx.createOscillator();
-              const g = this.ctx.createGain();
-              o.type = 'sawtooth';
-              o.frequency.setValueAtTime(550 - (i * 60), now + (i * 0.06));
-              g.gain.setValueAtTime(0.15, now + (i * 0.06));
-              g.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.06) + 0.05);
-              o.connect(g);
-              g.connect(this.ctx.destination);
-              o.start(now + (i * 0.06));
-              o.stop(now + (i * 0.06) + 0.05);
-            }
-            break;
-          default:
-            this.playPop();
-        }
-      }
-
-      // EXECUÇÃO DO SOM DOS ANIMAIS (MP3 LOCAL -> SINTETIZADOR -> VOZ NATIVA)
+      // EXECUÇÃO APENAS DA FALA NATIVA DO NOME DO ANIMAL
       playAnimalSound(animalObj) {
         if (this.isMuted) return;
         this.init();
 
-        const animalKey = typeof animalObj === 'string' ? animalObj : animalObj.id;
-        const animalName = typeof animalObj === 'object' ? animalObj.name : animalKey;
-        const soundText = typeof animalObj === 'object' ? animalObj.soundText : '';
-
-        // Toca o som sintetizado ou a fala nativa
-        this.speak(`${animalName}! ${soundText}`);
-
-        try {
-          if (this.currentAudio) {
-            this.currentAudio.pause();
-            this.currentAudio.currentTime = 0;
-          }
-
-          const path = ANIMAL_AUDIO_FILES[animalKey];
-          if (path) {
-            const audio = new Audio(path);
-            this.currentAudio = audio;
-            audio.volume = 1.0;
-
-            const promise = audio.play();
-            if (promise !== undefined) {
-              promise.catch(() => {
-                this.playSynthAnimalSound(animalKey);
-              });
-            }
-          } else {
-            this.playSynthAnimalSound(animalKey);
-          }
-        } catch (e) {
-          this.playSynthAnimalSound(animalKey);
-        }
+        const animalName = typeof animalObj === 'object' ? animalObj.name : animalObj;
+        this.speak(animalName);
       }
     }
 
@@ -886,20 +703,20 @@
         }
       };
 
-      // --- SONS DOS ANIMAIS ---
+      // --- NOME DOS ANIMAIS ---
       const animalSoundsList = [
-        { id: 'coruja', name: 'Coruja', emoji: '🦉', soundText: 'Uuuu Uuuu' },
-        { id: 'macaco', name: 'Macaco', emoji: '🐵', soundText: 'Uh Uh Ah Ah' },
-        { id: 'porco', name: 'Porco', emoji: '🐷', soundText: 'Oinc Oinc' },
-        { id: 'pato', name: 'Pato', emoji: '🦆', soundText: 'Quack Quack' },
-        { id: 'ovelha', name: 'Ovelha', emoji: '🐑', soundText: 'Meee Meee' },
-        { id: 'galo', name: 'Galo', emoji: '🐓', soundText: 'Cocoricó' },
-        { id: 'elefante', name: 'Elefante', emoji: '🐘', soundText: 'Fuuuuh' },
-        { id: 'leao', name: 'Leão', emoji: '🦁', soundText: 'Roaaarrr' },
-        { id: 'cachorro', name: 'Cachorro', emoji: '🐶', soundText: 'Au Au' },
-        { id: 'gato', name: 'Gato', emoji: '🐱', soundText: 'Miau' },
-        { id: 'vaca', name: 'Vaca', emoji: '🐮', soundText: 'Muuuu' },
-        { id: 'cavalo', name: 'Cavalo', emoji: '🐴', soundText: 'Riiiii-hó' }
+        { id: 'coruja', name: 'Coruja', emoji: '🦉' },
+        { id: 'macaco', name: 'Macaco', emoji: '🐵' },
+        { id: 'porco', name: 'Porco', emoji: '🐷' },
+        { id: 'pato', name: 'Pato', emoji: '🦆' },
+        { id: 'ovelha', name: 'Ovelha', emoji: '🐑' },
+        { id: 'galo', name: 'Galo', emoji: '🐓' },
+        { id: 'elefante', name: 'Elefante', emoji: '🐘' },
+        { id: 'leao', name: 'Leão', emoji: '🦁' },
+        { id: 'cachorro', name: 'Cachorro', emoji: '🐶' },
+        { id: 'gato', name: 'Gato', emoji: '🐱' },
+        { id: 'vaca', name: 'Vaca', emoji: '🐮' },
+        { id: 'cavalo', name: 'Cavalo', emoji: '🐴' }
       ];
       const [activeAnimalSound, setActiveAnimalSound] = useState(null);
 
@@ -1015,9 +832,9 @@
                       onClick={() => setActiveModule('animal-sounds')}
                       className={`${getCardStyle()} p-6 rounded-3xl text-left hover:scale-105 transition-all border-b-8 border-emerald-400`}
                     >
-                      <div className="text-4xl mb-3">🔊</div>
-                      <h2 className="text-xl font-bold mb-1">Sons dos Animais</h2>
-                      <p className="text-sm opacity-75">Ouça o som da coruja, macaco, porco, pato, ovelha, galo e leão!</p>
+                      <div className="text-4xl mb-3">🗣️</div>
+                      <h2 className="text-xl font-bold mb-1">Nome dos Animais</h2>
+                      <p className="text-sm opacity-75">Clique em cada animal para ouvir o nome falado!</p>
                     </button>
 
                     <button 
@@ -1125,12 +942,12 @@
                 </div>
               )}
 
-              {/* MÓDULO SONS DOS ANIMAIS */}
+              {/* MÓDULO NOME DOS ANIMAIS */}
               {activeModule === 'animal-sounds' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div>
-                    <h2 className="text-2xl font-bold">🔊 Sons dos Animais</h2>
-                    <p className="text-sm opacity-75">Clique em cada animal para ouvir o som característico que ele faz!</p>
+                    <h2 className="text-2xl font-bold">🗣️ Nome dos Animais</h2>
+                    <p className="text-sm opacity-75">Clique em cada animal para ouvir o nome dele!</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -1151,9 +968,6 @@
                             {animal.emoji}
                           </div>
                           <div className="font-bold text-lg text-slate-800">{animal.name}</div>
-                          <div className={`text-xs font-black px-2.5 py-1 rounded-full ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                            {animal.soundText}
-                          </div>
                         </button>
                       );
                     })}
