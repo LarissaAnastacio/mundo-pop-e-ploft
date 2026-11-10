@@ -9,7 +9,8 @@
   <link rel="canonical" href="https://mundo-pop-e-ploft.link" />
 
   <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-84121679402445496" crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8412167940245496"
+       crossorigin="anonymous"></script>
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -43,6 +44,7 @@
         }
       }
 
+      // SELECIONA A MELHOR VOZ EM PORTUGUÊS DISPONÍVEL NO DISPOSITIVO
       initVoices() {
         if (!('speechSynthesis' in window)) return;
         
@@ -61,6 +63,7 @@
         }
       }
 
+      // REPRODUÇÃO DA FALA NATIVA (FALA APENAS O NOME DO ANIMAL COM PRONÚNCIA CLARA)
       speak(text) {
         if (this.isMuted || !('speechSynthesis' in window)) return;
         
