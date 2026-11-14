@@ -44,7 +44,6 @@
         }
       }
 
-      // SELECIONA A MELHOR VOZ EM PORTUGUÊS DISPONÍVEL NO DISPOSITIVO
       initVoices() {
         if (!('speechSynthesis' in window)) return;
         
@@ -63,7 +62,6 @@
         }
       }
 
-      // REPRODUÇÃO DA FALA NATIVA (FALA APENAS O NOME DO ANIMAL COM PRONÚNCIA CLARA)
       speak(text) {
         if (this.isMuted || !('speechSynthesis' in window)) return;
         
@@ -370,13 +368,140 @@
 
     const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
+    const initialRoutines = [
+      { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅' },
+      { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥' },
+      { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿' },
+      { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣' },
+      { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊' },
+      { id: 6, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼' },
+      { id: 7, title: 'Ir para a Escola / Creche', time: 'Manhã', icon: '🎒' },
+      { id: 8, title: 'Ir para a Faculdade / Curso', time: 'Tarde', icon: '🎓' },
+      { id: 9, title: 'Trabalhar / Tarefas', time: 'Tarde', icon: '💻' },
+      { id: 10, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚' },
+      { id: 11, title: 'Ir à Terapia / Fono / TO', time: 'Tarde', icon: '🧩' },
+      { id: 12, title: 'Consulta no Médico / Dentista', time: 'Dia', icon: '🩺' },
+      { id: 13, title: 'Beber Água e Se Hidratar', time: 'Dia', icon: '🥤' },
+      { id: 14, title: 'Fazer Exercício / Alongamento', time: 'Tarde', icon: '🤸' },
+      { id: 15, title: 'Almoçar', time: 'Tarde', icon: '🍽️' },
+      { id: 16, title: 'Lanche da Tarde', time: 'Tarde', icon: '🍎' },
+      { id: 17, title: 'Conversar com Amigos / Família', time: 'Tarde', icon: '💬' },
+      { id: 18, title: 'Brincar / Jogar / Momento Livre', time: 'Tarde', icon: '🎨' },
+      { id: 19, title: 'Jantar', time: 'Noite', icon: '🍲' },
+      { id: 20, title: 'Guardar Brinquedos e Fazer a Mochila', time: 'Noite', icon: '🧸' },
+      { id: 21, title: 'Momento de Relaxar / Desconectar', time: 'Noite', icon: '🎧' },
+      { id: 22, title: 'Hora de Dormir', time: 'Noite', icon: '🌙' }
+    ];
+
+    const buildDefaultWeeklyRoutines = () => {
+      const initialMap = {};
+      weekDays.forEach(day => {
+        initialMap[day] = initialRoutines.map(r => ({ ...r, completed: false }));
+      });
+      return initialMap;
+    };
+
+    const getLocalDateISO = (dateObj = new Date()) => {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const formatDateBR = (isoDate) => {
+      if (!isoDate) return '';
+      const [y, m, d] = isoDate.split('-');
+      return `${d}/${m}/${y}`;
+    };
+
+    const STORAGE_KEYS = {
+      CONSENT: 'mp_lgpd_consent_v1',
+      SUPPORT_LEVEL: 'mp_support_level_v1',
+      THEME_MODE: 'mp_theme_mode_v1',
+      ROUTINES: 'mp_weekly_routines_v1',
+      EVOLUTION_HISTORY: 'mp_evolution_history_v1'
+    };
+
     function App() {
-      const [supportLevel, setSupportLevel] = useState(2);
-      const [themeMode, setThemeMode] = useState('pastel');
+      // --- ESTADOS DE LGPD E PRIVACIDADE ---
+      const [lgpdConsent, setLgpdConsent] = useState(() => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.CONSENT);
+        } catch {
+          return null;
+        }
+      });
+      const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+      const [dataClearedNotice, setDataClearedNotice] = useState(false);
+
+      // --- ESTADOS PRINCIPAIS COM LEITURA SEGURA DE PREFERÊNCIAS LOCAIS ---
+      const [supportLevel, setSupportLevel] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.SUPPORT_LEVEL);
+          return saved ? Number(saved) : 2;
+        } catch {
+          return 2;
+        }
+      });
+
+      const [themeMode, setThemeMode] = useState(() => {
+        try {
+          return localStorage.getItem(STORAGE_KEYS.THEME_MODE) || 'pastel';
+        } catch {
+          return 'pastel';
+        }
+      });
+
       const [isMuted, setIsMuted] = useState(false);
       const [reduceMotion, setReduceMotion] = useState(false);
       const [activeModule, setActiveModule] = useState('home');
       const [showParentModal, setShowParentModal] = useState(false);
+
+      useEffect(() => {
+        try {
+          if (lgpdConsent === 'accepted') {
+            localStorage.setItem(STORAGE_KEYS.SUPPORT_LEVEL, String(supportLevel));
+            localStorage.setItem(STORAGE_KEYS.THEME_MODE, themeMode);
+          }
+        } catch (e) {
+          console.warn("Armazenamento local indisponível:", e);
+        }
+      }, [supportLevel, themeMode, lgpdConsent]);
+
+      const handleAcceptLgpd = (choice) => {
+        setLgpdConsent(choice);
+        try {
+          localStorage.setItem(STORAGE_KEYS.CONSENT, choice);
+          if (choice === 'essential') {
+            localStorage.removeItem(STORAGE_KEYS.ROUTINES);
+            localStorage.removeItem(STORAGE_KEYS.EVOLUTION_HISTORY);
+            localStorage.removeItem(STORAGE_KEYS.SUPPORT_LEVEL);
+            localStorage.removeItem(STORAGE_KEYS.THEME_MODE);
+          } else if (choice === 'accepted') {
+            localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(weeklyRoutines));
+            localStorage.setItem(STORAGE_KEYS.EVOLUTION_HISTORY, JSON.stringify(evolutionHistory));
+          }
+        } catch (e) {
+          console.warn("Erro ao salvar consentimento:", e);
+        }
+      };
+
+      const handleClearAllUserData = () => {
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch (e) {
+          console.warn("Erro ao limpar armazenamento:", e);
+        }
+        setWeeklyRoutines(buildDefaultWeeklyRoutines());
+        setEvolutionHistory({});
+        setSupportLevel(2);
+        setThemeMode('pastel');
+        setLgpdConsent(null);
+        setDataClearedNotice(true);
+        audioSystem.playPop(1.3);
+        setTimeout(() => setDataClearedNotice(false), 4000);
+      };
 
       useEffect(() => {
         const unlockAudio = () => {
@@ -569,47 +694,160 @@
       ];
       const [selectedEmotion, setSelectedEmotion] = useState(emotionsData[0]);
 
-      const initialRoutines = [
-        { id: 1, title: 'Acordar e Espreguiçar', time: 'Manhã', icon: '🌅' },
-        { id: 2, title: 'Escovar os Dentes', time: 'Manhã', icon: '🪥' },
-        { id: 3, title: 'Tomar Banho e Se Vestir', time: 'Manhã', icon: '🚿' },
-        { id: 4, title: 'Tomar Café da Manhã', time: 'Manhã', icon: '🥣' },
-        { id: 5, title: 'Tomar Remédio / Vitamina', time: 'Manhã', icon: '💊' },
-        { id: 6, title: 'Lavar as Mãos', time: 'Dia', icon: '🧼' },
-        { id: 7, title: 'Ir para a Escola / Creche', time: 'Manhã', icon: '🎒' },
-        { id: 8, title: 'Ir para a Faculdade / Curso', time: 'Tarde', icon: '🎓' },
-        { id: 9, title: 'Trabalhar / Tarefas', time: 'Tarde', icon: '💻' },
-        { id: 10, title: 'Fazer Lição / Estudar', time: 'Tarde', icon: '📚' },
-        { id: 11, title: 'Ir à Terapia / Fono / TO', time: 'Tarde', icon: '🧩' },
-        { id: 12, title: 'Consulta no Médico / Dentista', time: 'Dia', icon: '🩺' },
-        { id: 13, title: 'Beber Água e Se Hidratar', time: 'Dia', icon: '🥤' },
-        { id: 14, title: 'Fazer Exercício / Alongamento', time: 'Tarde', icon: '🤸' },
-        { id: 15, title: 'Almoçar', time: 'Tarde', icon: '🍽️' },
-        { id: 16, title: 'Lanche da Tarde', time: 'Tarde', icon: '🍎' },
-        { id: 17, title: 'Conversar com Amigos / Família', time: 'Tarde', icon: '💬' },
-        { id: 18, title: 'Brincar / Jogar / Momento Livre', time: 'Tarde', icon: '🎨' },
-        { id: 19, title: 'Jantar', time: 'Noite', icon: '🍲' },
-        { id: 20, title: 'Guardar Brinquedos e Fazer a Mochila', time: 'Noite', icon: '🧸' },
-        { id: 21, title: 'Momento de Relaxar / Desconectar', time: 'Noite', icon: '🎧' },
-        { id: 22, title: 'Hora de Dormir', time: 'Noite', icon: '🌙' }
-      ];
-
+      // --- ESTADOS DA ROTINA E HISTÓRICO PERMANENTE DE EVOLUÇÃO ---
       const [currentDay, setCurrentDay] = useState('Segunda');
       const [routineTab, setRoutineTab] = useState('today');
+      const [historyPeriod, setHistoryPeriod] = useState('weekly'); // 'daily' | 'weekly' | 'monthly'
+      const [selectedHistoryDate, setSelectedHistoryDate] = useState(() => getLocalDateISO());
+      const [selectedHistoryMonth, setSelectedHistoryMonth] = useState(() => getLocalDateISO().slice(0, 7));
+
       const [weeklyRoutines, setWeeklyRoutines] = useState(() => {
-        const initialMap = {};
-        weekDays.forEach(day => {
-          initialMap[day] = initialRoutines.map(r => ({ ...r, completed: false }));
-        });
-        return initialMap;
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.ROUTINES);
+          return saved ? JSON.parse(saved) : buildDefaultWeeklyRoutines();
+        } catch {
+          return buildDefaultWeeklyRoutines();
+        }
       });
 
+      // Registro permanente indexado por data ISO (ex: '2026-11-14') que nunca é apagado automaticamente
+      const [evolutionHistory, setEvolutionHistory] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.EVOLUTION_HISTORY);
+          return saved ? JSON.parse(saved) : {};
+        } catch {
+          return {};
+        }
+      });
+
+      useEffect(() => {
+        try {
+          if (lgpdConsent !== 'essential') {
+            localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(weeklyRoutines));
+          }
+        } catch (e) {
+          console.warn("Erro ao salvar rotinas:", e);
+        }
+      }, [weeklyRoutines, lgpdConsent]);
+
+      useEffect(() => {
+        try {
+          if (lgpdConsent !== 'essential') {
+            localStorage.setItem(STORAGE_KEYS.EVOLUTION_HISTORY, JSON.stringify(evolutionHistory));
+          }
+        } catch (e) {
+          console.warn("Erro ao salvar histórico permanente:", e);
+        }
+      }, [evolutionHistory, lgpdConsent]);
+
       const completeRoutine = (id) => {
+        const targetTask = weeklyRoutines[currentDay].find(r => r.id === id);
+        if (!targetTask) return;
+
+        const isNowCompleting = !targetTask.completed;
+
         setWeeklyRoutines(prev => ({
           ...prev,
-          [currentDay]: prev[currentDay].map(r => r.id === id ? { ...r, completed: !r.completed } : r)
+          [currentDay]: prev[currentDay].map(r => r.id === id ? { ...r, completed: isNowCompleting } : r)
         }));
+
+        // Grava permanentemente no histórico de evolução (sem apagar registros anteriores)
+        if (isNowCompleting) {
+          const todayISO = getLocalDateISO();
+          const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          setEvolutionHistory(prev => {
+            const existingDay = prev[todayISO] || {
+              date: todayISO,
+              dayName: currentDay,
+              totalAvailable: initialRoutines.length,
+              records: []
+            };
+
+            const alreadyRecordedToday = existingDay.records.some(
+              rec => rec.taskId === targetTask.id && rec.dayName === currentDay
+            );
+
+            if (alreadyRecordedToday) {
+              return prev;
+            }
+
+            return {
+              ...prev,
+              [todayISO]: {
+                ...existingDay,
+                dayName: currentDay,
+                records: [
+                  ...existingDay.records,
+                  {
+                    recordId: `${todayISO}-${currentDay}-${targetTask.id}-${Date.now()}`,
+                    taskId: targetTask.id,
+                    title: targetTask.title,
+                    icon: targetTask.icon,
+                    timeOfDay: targetTask.time,
+                    dayName: currentDay,
+                    completedAt: nowTime
+                  }
+                ]
+              }
+            };
+          });
+        }
+
         audioSystem.playSuccess();
+      };
+
+      const resetDayCheckboxesOnly = () => {
+        setWeeklyRoutines(prev => ({
+          ...prev,
+          [currentDay]: prev[currentDay].map(r => ({ ...r, completed: false }))
+        }));
+        audioSystem.playPop(1.2);
+      };
+
+      // Cálculos para os relatórios de evolução
+      const getLast7DaysData = () => {
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const iso = getLocalDateISO(d);
+          const weekdayLabel = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+          const dayEntry = evolutionHistory[iso];
+          const count = dayEntry ? dayEntry.records.length : 0;
+          const percent = Math.min(100, Math.round((count / initialRoutines.length) * 100));
+          days.push({
+            iso,
+            shortDate: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+            weekdayLabel: weekdayLabel.charAt(0).toUpperCase() + weekdayLabel.slice(1),
+            count,
+            percent
+          });
+        }
+        return days;
+      };
+
+      const getMonthlySummary = (monthStr) => {
+        const entries = Object.values(evolutionHistory).filter(entry => entry.date.startsWith(monthStr));
+        const totalCompleted = entries.reduce((sum, entry) => sum + entry.records.length, 0);
+        const activeDays = entries.filter(entry => entry.records.length > 0).length;
+        const avgPerActiveDay = activeDays > 0 ? (totalCompleted / activeDays).toFixed(1) : 0;
+
+        const taskFrequency = {};
+        entries.forEach(entry => {
+          entry.records.forEach(rec => {
+            if (!taskFrequency[rec.title]) {
+              taskFrequency[rec.title] = { title: rec.title, icon: rec.icon, count: 0 };
+            }
+            taskFrequency[rec.title].count += 1;
+          });
+        });
+
+        const topTasks = Object.values(taskFrequency)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6);
+
+        return { entries, totalCompleted, activeDays, avgPerActiveDay, topTasks };
       };
 
       const [dotCategory, setDotCategory] = useState('Carros & Motos');
@@ -807,6 +1045,11 @@
         return 'bg-white/90 backdrop-blur-md border-amber-100 shadow-md text-slate-700';
       };
 
+      const totalHistoricalRecords = Object.values(evolutionHistory).reduce(
+        (acc, dayObj) => acc + dayObj.records.length,
+        0
+      );
+
       return (
         <div className={`min-h-screen ${getThemeClass()} transition-colors duration-300 flex flex-col justify-between p-4 md:p-8`}>
           <div>
@@ -827,7 +1070,7 @@
                 {activeModule !== 'home' && (
                   <button 
                     onClick={() => setActiveModule('home')}
-                    className="p-3 rounded-xl border bg-slate-100 font-bold hover:bg-slate-200 transition"
+                    className="p-3 rounded-xl border bg-slate-100 text-slate-800 font-bold hover:bg-slate-200 transition"
                   >
                     🏠 Início
                   </button>
@@ -917,7 +1160,7 @@
                     >
                       <div className="text-4xl mb-3">📅</div>
                       <h2 className="text-xl font-bold mb-1">Minha Rotina Completa</h2>
-                      <p className="text-sm opacity-75">Escola, faculdade, trabalho, médico, terapia, lazer e muito mais!</p>
+                      <p className="text-sm opacity-75">Tarefas diárias e histórico permanente de evolução semanal e mensal!</p>
                     </button>
 
                     <button 
@@ -982,7 +1225,7 @@
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-4`}>
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">🫧</span>
-                    <h2 className="text-2xl font-bold text-slate-800">Estourar Bolhas Calmas</h2>
+                    <h2 className="text-2xl font-bold">Estourar Bolhas Calmas</h2>
                   </div>
 
                   <div 
@@ -1236,7 +1479,7 @@
                             setSelectedDrawingIndex(0);
                             resetDotGame();
                           }}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${dotCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}
+                          className={`px-3 py-1.5 rounded-xl font-bold text-sm transition ${dotCategory === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                         >
                           {cat}
                         </button>
@@ -1459,11 +1702,16 @@
                 </div>
               )}
 
-              {/* ROTINA COMPLETA */}
+              {/* ROTINA COMPLETA E HISTÓRICO PERMANENTE DE EVOLUÇÃO */}
               {activeModule === 'routines' && (
                 <div className={`${getCardStyle()} p-6 rounded-3xl space-y-6`}>
                   <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold">📅 Cartões de Rotina Diária</h2>
+                    <div>
+                      <h2 className="text-2xl font-bold">📅 Cartões de Rotina & Evolução</h2>
+                      <p className="text-xs opacity-75">
+                        Total de atividades registradas no histórico permanente: <strong>{totalHistoricalRecords}</strong>
+                      </p>
+                    </div>
 
                     <div className="flex gap-2 border p-1 rounded-2xl bg-slate-100">
                       <button
@@ -1476,23 +1724,33 @@
                         onClick={() => setRoutineTab('history')}
                         className={`px-4 py-2 rounded-xl font-bold text-sm transition ${routineTab === 'history' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600'}`}
                       >
-                        📊 Histórico Semanal
+                        📊 Histórico Permanente
                       </button>
                     </div>
                   </div>
 
                   {routineTab === 'today' ? (
                     <div className="space-y-6">
-                      <div className="flex flex-wrap gap-2 justify-center bg-indigo-50/60 p-3 rounded-2xl">
-                        {weekDays.map(day => (
-                          <button
-                            key={day}
-                            onClick={() => setCurrentDay(day)}
-                            className={`px-3 py-2 rounded-xl font-bold text-sm transition ${currentDay === day ? 'bg-indigo-600 text-white shadow-md scale-105' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
-                          >
-                            {day}
-                          </button>
-                        ))}
+                      <div className="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/60 p-3 rounded-2xl">
+                        <div className="flex flex-wrap gap-2">
+                          {weekDays.map(day => (
+                            <button
+                              key={day}
+                              onClick={() => setCurrentDay(day)}
+                              className={`px-3 py-2 rounded-xl font-bold text-sm transition ${currentDay === day ? 'bg-indigo-600 text-white shadow-md scale-105' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
+                            >
+                              {day}
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          onClick={resetDayCheckboxesOnly}
+                          title="Desmarca as caixinhas deste dia para iniciar um novo ciclo sem apagar o histórico"
+                          className="px-3 py-2 rounded-xl bg-white border border-indigo-200 text-indigo-700 font-bold text-xs hover:bg-indigo-100 transition"
+                        >
+                          🔄 Novo Dia (Mantém Histórico)
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1500,7 +1758,7 @@
                           <div 
                             key={r.id}
                             onClick={() => completeRoutine(r.id)}
-                            className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-70' : 'bg-white border-slate-200'}`}
+                            className={`p-4 rounded-2xl border-2 cursor-pointer flex items-center justify-between transition hover:scale-[1.01] ${r.completed ? 'bg-emerald-50 border-emerald-400 opacity-80 text-slate-800' : 'bg-white border-slate-200 text-slate-800'}`}
                           >
                             <div className="flex items-center gap-3">
                               <span className="text-3xl">{r.icon}</span>
@@ -1517,33 +1775,253 @@
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold text-slate-700">Acompanhamento dos Dias da Semana:</h3>
-                      <div className="grid grid-cols-1 gap-3">
-                        {weekDays.map(day => {
-                          const dayTasks = weeklyRoutines[day];
-                          const completedCount = dayTasks.filter(t => t.completed).length;
-                          const totalCount = dayTasks.length;
-                          const percent = Math.round((completedCount / totalCount) * 100);
+                    /* ABA DE HISTÓRICO PERMANENTE: DIÁRIO / SEMANAL / MENSAL */
+                    <div className="space-y-6">
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs md:text-sm flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          <strong>🔒 Histórico Protegido:</strong> Todas as atividades concluídas ficam salvas permanentemente neste navegador para acompanhamento de evolução diária, semanal e mensal.
+                        </span>
+                      </div>
 
-                          return (
-                            <div key={day} className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
+                      {/* SELETOR DE PERÍODO */}
+                      <div className="flex flex-wrap gap-2 justify-center bg-slate-100 p-2 rounded-2xl">
+                        <button
+                          onClick={() => setHistoryPeriod('daily')}
+                          className={`px-4 py-2 rounded-xl font-bold text-sm transition ${historyPeriod === 'daily' ? 'bg-indigo-600 text-white shadow' : 'text-slate-700 hover:bg-white'}`}
+                        >
+                          📅 Evolução Diária
+                        </button>
+                        <button
+                          onClick={() => setHistoryPeriod('weekly')}
+                          className={`px-4 py-2 rounded-xl font-bold text-sm transition ${historyPeriod === 'weekly' ? 'bg-indigo-600 text-white shadow' : 'text-slate-700 hover:bg-white'}`}
+                        >
+                          📆 Evolução Semanal
+                        </button>
+                        <button
+                          onClick={() => setHistoryPeriod('monthly')}
+                          className={`px-4 py-2 rounded-xl font-bold text-sm transition ${historyPeriod === 'monthly' ? 'bg-indigo-600 text-white shadow' : 'text-slate-700 hover:bg-white'}`}
+                        >
+                          🗓️ Evolução Mensal
+                        </button>
+                      </div>
+
+                      {/* VISÃO 1: DIÁRIA */}
+                      {historyPeriod === 'daily' && (() => {
+                        const dayLog = evolutionHistory[selectedHistoryDate];
+                        const completedList = dayLog ? dayLog.records : [];
+                        const dailyPercent = Math.min(100, Math.round((completedList.length / initialRoutines.length) * 100));
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4 bg-indigo-50 p-4 rounded-2xl">
+                              <div>
+                                <h3 className="font-black text-indigo-950 text-lg">
+                                  Registro do Dia: {formatDateBR(selectedHistoryDate)}
+                                </h3>
+                                <p className="text-xs text-indigo-700">
+                                  Selecione uma data para consultar todas as atividades realizadas
+                                </p>
+                              </div>
+                              <input
+                                type="date"
+                                value={selectedHistoryDate}
+                                onChange={(e) => setSelectedHistoryDate(e.target.value)}
+                                className="px-3 py-2 rounded-xl border border-indigo-300 bg-white text-slate-800 font-bold text-sm"
+                              />
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2 text-slate-800">
                               <div className="flex justify-between items-center font-bold">
-                                <span className="text-slate-800">{day}</span>
-                                <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                                  {completedCount} de {totalCount} concluídas ({percent}%)
+                                <span>Progresso Concluído na Data</span>
+                                <span className="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                                  {completedList.length} de {initialRoutines.length} atividades ({dailyPercent}%)
                                 </span>
                               </div>
                               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
                                 <div 
                                   className="bg-emerald-500 h-full transition-all duration-500 rounded-full"
-                                  style={{ width: `${percent}%` }}
+                                  style={{ width: `${dailyPercent}%` }}
                                 />
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+
+                            {completedList.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {completedList.map((rec) => (
+                                  <div key={rec.recordId} className="p-3.5 rounded-2xl bg-white border border-emerald-200 flex items-center justify-between text-slate-800 shadow-xs">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-2xl">{rec.icon}</span>
+                                      <div>
+                                        <p className="font-bold text-sm">{rec.title}</p>
+                                        <p className="text-xs text-slate-500">
+                                          {rec.dayName} • Turno: {rec.timeOfDay}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">
+                                      ✓ {rec.completedAt}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-8 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 text-center text-slate-500 space-y-1">
+                                <p className="text-2xl">📭</p>
+                                <p className="font-bold text-sm">Nenhuma atividade registrada nesta data.</p>
+                                <p className="text-xs">Marque tarefas na aba "Tarefas do Dia" para registrar sua evolução.</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* VISÃO 2: SEMANAL */}
+                      {historyPeriod === 'weekly' && (() => {
+                        const last7Days = getLast7DaysData();
+                        const weeklyTotal = last7Days.reduce((sum, d) => sum + d.count, 0);
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 text-center">
+                                <p className="text-xs font-bold text-indigo-700 uppercase">Últimos 7 Dias</p>
+                                <p className="text-3xl font-black text-indigo-950 mt-1">{weeklyTotal}</p>
+                                <p className="text-xs text-indigo-700">atividades concluídas</p>
+                              </div>
+                              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-center">
+                                <p className="text-xs font-bold text-emerald-700 uppercase">Dias Ativos na Semana</p>
+                                <p className="text-3xl font-black text-emerald-950 mt-1">
+                                  {last7Days.filter(d => d.count > 0).length} / 7
+                                </p>
+                                <p className="text-xs text-emerald-700">dias com registros</p>
+                              </div>
+                              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100 text-center">
+                                <p className="text-xs font-bold text-amber-700 uppercase">Média Diária (7d)</p>
+                                <p className="text-3xl font-black text-amber-950 mt-1">
+                                  {(weeklyTotal / 7).toFixed(1)}
+                                </p>
+                                <p className="text-xs text-amber-700">tarefas por dia</p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <h3 className="text-base font-bold">Evolução dos Últimos 7 Dias Corridos:</h3>
+                              <div className="grid grid-cols-1 gap-3">
+                                {last7Days.map(d => (
+                                  <div key={d.iso} className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2 text-slate-800">
+                                    <div className="flex justify-between items-center font-bold">
+                                      <span>{d.weekdayLabel} ({d.shortDate})</span>
+                                      <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-800">
+                                        {d.count} de {initialRoutines.length} atividades ({d.percent}%)
+                                      </span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                      <div 
+                                        className="bg-indigo-600 h-full transition-all duration-500 rounded-full"
+                                        style={{ width: `${d.percent}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-3 pt-2 border-t border-slate-200/60">
+                              <h3 className="text-base font-bold">Quadro Atual por Dia da Semana:</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {weekDays.map(day => {
+                                  const dayTasks = weeklyRoutines[day];
+                                  const completedCount = dayTasks.filter(t => t.completed).length;
+                                  const totalCount = dayTasks.length;
+                                  const percent = Math.round((completedCount / totalCount) * 100);
+
+                                  return (
+                                    <div key={day} className="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2 text-slate-800">
+                                      <div className="flex justify-between items-center font-bold text-sm">
+                                        <span>{day}</span>
+                                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                          {completedCount}/{totalCount} ({percent}%)
+                                        </span>
+                                      </div>
+                                      <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                        <div 
+                                          className="bg-emerald-500 h-full transition-all duration-500 rounded-full"
+                                          style={{ width: `${percent}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* VISÃO 3: MENSAL */}
+                      {historyPeriod === 'monthly' && (() => {
+                        const monthlyData = getMonthlySummary(selectedHistoryMonth);
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="flex flex-wrap items-center justify-between gap-4 bg-purple-50 p-4 rounded-2xl">
+                              <div>
+                                <h3 className="font-black text-purple-950 text-lg">Consolidado Mensal</h3>
+                                <p className="text-xs text-purple-700">Escolha o mês e o ano para acompanhar a evolução acumulada</p>
+                              </div>
+                              <input
+                                type="month"
+                                value={selectedHistoryMonth}
+                                onChange={(e) => setSelectedHistoryMonth(e.target.value)}
+                                className="px-3 py-2 rounded-xl border border-purple-300 bg-white text-slate-800 font-bold text-sm"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="p-4 rounded-2xl bg-purple-50 border border-purple-100 text-center">
+                                <p className="text-xs font-bold text-purple-700 uppercase">Total no Mês</p>
+                                <p className="text-3xl font-black text-purple-950 mt-1">{monthlyData.totalCompleted}</p>
+                                <p className="text-xs text-purple-700">atividades realizadas</p>
+                              </div>
+                              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-center">
+                                <p className="text-xs font-bold text-emerald-700 uppercase">Dias com Registro</p>
+                                <p className="text-3xl font-black text-emerald-950 mt-1">{monthlyData.activeDays}</p>
+                                <p className="text-xs text-emerald-700">dias praticados no mês</p>
+                              </div>
+                              <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100 text-center">
+                                <p className="text-xs font-bold text-sky-700 uppercase">Média por Dia Ativo</p>
+                                <p className="text-3xl font-black text-sky-950 mt-1">{monthlyData.avgPerActiveDay}</p>
+                                <p className="text-xs text-sky-700">tarefas por dia ativo</p>
+                              </div>
+                            </div>
+
+                            {monthlyData.topTasks.length > 0 ? (
+                              <div className="space-y-3">
+                                <h3 className="text-base font-bold">Atividades Mais Praticadas no Mês:</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  {monthlyData.topTasks.map((item, i) => (
+                                    <div key={i} className="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between text-slate-800">
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-2xl">{item.icon}</span>
+                                        <span className="font-bold text-sm">{item.title}</span>
+                                      </div>
+                                      <span className="text-xs font-black px-3 py-1 rounded-full bg-purple-100 text-purple-900">
+                                        {item.count}x no mês
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-8 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 text-center text-slate-500 space-y-1">
+                                <p className="text-2xl">📆</p>
+                                <p className="font-bold text-sm">Nenhum registro encontrado para este mês.</p>
+                                <p className="text-xs">Conclua tarefas diárias para preencher automaticamente o histórico mensal.</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1561,7 +2039,7 @@
                           setSelectedEmotion(e);
                           audioSystem.playPop(1.2);
                         }}
-                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 scale-105' : 'border-transparent bg-slate-100/50'}`}
+                        className={`p-6 rounded-2xl border-4 text-center transition ${selectedEmotion.id === e.id ? 'border-indigo-500 bg-indigo-50 text-slate-800 scale-105' : 'border-transparent bg-slate-100/50'}`}
                       >
                         <div className="text-5xl mb-2">{e.emoji}</div>
                         <div className="font-bold">{e.label}</div>
@@ -1570,18 +2048,26 @@
                   </div>
                   <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-center">
                     <p className="text-xl font-bold mb-1">{selectedEmotion.emoji} {selectedEmotion.label}</p>
-                    <p className="text-sm text-slate-600">{selectedEmotion.desc}</p>
+                    <p className="text-sm opacity-80">{selectedEmotion.desc}</p>
                   </div>
                 </div>
               )}
             </main>
           </div>
 
-          {/* MODAL DE AJUSTES */}
+          {/* MODAL DE AJUSTES E CONTROLES LGPD */}
           {showParentModal && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-4`}>
-                <h3 className="text-xl font-bold">⚙️ Ajustes de Acessibilidade</h3>
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className={`${getCardStyle()} p-6 rounded-3xl max-w-md w-full space-y-5 max-h-[90vh] overflow-y-auto`}>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold">⚙️ Ajustes & Privacidade</h3>
+                  <button 
+                    onClick={() => setShowParentModal(false)}
+                    className="text-sm font-bold px-3 py-1 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  >
+                    ✕
+                  </button>
+                </div>
                 
                 <div>
                   <label className="block text-sm font-bold mb-1">Nível de Suporte TEA:</label>
@@ -1590,7 +2076,7 @@
                       <button 
                         key={lvl}
                         onClick={() => setSupportLevel(lvl)}
-                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                        className={`p-2 rounded-xl font-bold border ${supportLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}
                       >
                         Nível {lvl}
                       </button>
@@ -1605,7 +2091,7 @@
                       <button 
                         key={t}
                         onClick={() => setThemeMode(t)}
-                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}
+                        className={`p-2 rounded-xl font-bold border capitalize ${themeMode === t ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800'}`}
                       >
                         {t}
                       </button>
@@ -1613,17 +2099,178 @@
                   </div>
                 </div>
 
+                {/* SEÇÃO DE PRIVACIDADE E DADOS (LGPD) */}
+                <div className="pt-4 border-t border-slate-200/60 space-y-3">
+                  <h4 className="text-sm font-black uppercase tracking-wider text-indigo-600">
+                    🛡️ Privacidade e Dados (LGPD)
+                  </h4>
+                  <p className="text-xs opacity-80 leading-relaxed">
+                    Este aplicativo não coleta dados pessoais identificáveis em servidores externos. Suas preferências, rotina e histórico de evolução ficam salvos exclusivamente no armazenamento local do seu navegador.
+                  </p>
+
+                  <div className="flex flex-col gap-2">
+                    <button 
+                      onClick={() => {
+                        setShowParentModal(false);
+                        setShowPrivacyModal(true);
+                      }}
+                      className="w-full py-2.5 px-4 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold text-sm rounded-xl hover:bg-indigo-100 transition"
+                    >
+                      📄 Ler Política de Privacidade Completa
+                    </button>
+
+                    <button 
+                      onClick={handleClearAllUserData}
+                      className="w-full py-2.5 px-4 bg-rose-50 text-rose-700 border border-rose-200 font-bold text-sm rounded-xl hover:bg-rose-100 transition"
+                    >
+                      🗑️ Apagar Meus Dados e Resetar Histórico
+                    </button>
+                  </div>
+
+                  {dataClearedNotice && (
+                    <div className="p-3 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold rounded-xl text-center">
+                      ✓ Todos os dados locais, histórico e preferências foram apagados!
+                    </div>
+                  )}
+                </div>
+
                 <button 
                   onClick={() => setShowParentModal(false)}
-                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl"
+                  className="w-full py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition"
                 >
-                  Fechar
+                  Concluir
                 </button>
               </div>
             </div>
           )}
 
-          <footer className="mt-12 text-center text-sm opacity-70 py-4 border-t border-slate-200/40">
+          {/* MODAL DE POLÍTICA DE PRIVACIDADE (LGPD & GOOGLE ADSENSE) */}
+          {showPrivacyModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className={`${getCardStyle()} p-6 md:p-8 rounded-3xl max-w-2xl w-full space-y-4 max-h-[85vh] overflow-y-auto`}>
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h2 className="text-xl md:text-2xl font-black">🛡️ Política de Privacidade e Proteção de Dados</h2>
+                  <button 
+                    onClick={() => setShowPrivacyModal(false)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-800 font-bold hover:bg-slate-300"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-4 text-sm leading-relaxed">
+                  <p className="text-xs opacity-70">
+                    <strong>Última atualização:</strong> Novembro de 2026 • <strong>Domínio Oficial:</strong> https://mundo-pop-e-ploft.link
+                  </p>
+
+                  <section className="space-y-1">
+                    <h3 className="font-bold text-base text-indigo-600">1. Compromisso com a Privacidade e LGPD</h3>
+                    <p>
+                      O aplicativo educativo e sensorial <strong>Mundo Pop! &amp; Ploft!</strong>, desenvolvido por <strong>Larissa da Silva Anastácio</strong>, segue rigorosamente a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 – LGPD) e o princípio da minimização de dados. Não exigimos cadastro, login, nome, e-mail, CPF ou localização geográfica para utilizar qualquer módulo do jogo.
+                    </p>
+                  </section>
+
+                  <section className="space-y-1">
+                    <h3 className="font-bold text-base text-indigo-600">2. Proteção de Crianças e Adolescentes</h3>
+                    <p>
+                      Nossa plataforma foi projetada para crianças, famílias e pessoas neurodivergentes. Em conformidade com o Art. 14 da LGPD e as diretrizes internacionais de proteção infantil (COPPA), <strong>não coletamos, armazenamos ou compartilhamos dados pessoais de menores de idade</strong>. Nenhuma informação pessoal é enviada a servidores próprios.
+                    </p>
+                  </section>
+
+                  <section className="space-y-1">
+                    <h3 className="font-bold text-base text-indigo-600">3. Armazenamento Local e Histórico de Evolução</h3>
+                    <p>
+                      Utilizamos o armazenamento local do seu próprio navegador (<code>localStorage</code>) para guardar suas preferências de acessibilidade, rotina semanal e o histórico permanente de evolução diária, semanal e mensal. Esses dados permanecem exclusivamente no seu dispositivo e nunca são apagados automaticamente, podendo ser excluídos apenas por você através do botão <em>"Apagar Meus Dados"</em> no menu <strong>Ajustes</strong>.
+                    </p>
+                  </section>
+
+                  <section className="space-y-1">
+                    <h3 className="font-bold text-base text-indigo-600">4. Publicidade e Cookies (Google AdSense)</h3>
+                    <p>
+                      Este site utiliza o serviço <strong>Google AdSense</strong> para exibição de anúncios que ajudam a manter o projeto gratuito. O Google e seus parceiros podem utilizar cookies ou identificadores de dispositivo para exibir anúncios seguros e adequados ao público. Você pode gerenciar ou desativar a personalização de anúncios a qualquer momento acessando as <a href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-bold text-indigo-600">Configurações de Anúncios do Google</a>.
+                    </p>
+                  </section>
+
+                  <section className="space-y-1">
+                    <h3 className="font-bold text-base text-indigo-600">5. Segurança da Informação</h3>
+                    <p>
+                      Todo o tráfego entre seu navegador e o site <strong>mundo-pop-e-ploft.link</strong> é protegido por criptografia HTTPS/TLS, garantindo integridade e segurança contra interceptações.
+                    </p>
+                  </section>
+
+                  <section className="space-y-1">
+                    <h3 className="font-bold text-base text-indigo-600">6. Seus Direitos como Titular</h3>
+                    <p>
+                      Você tem o direito de acessar, revogar seu consentimento ou eliminar seus dados locais a qualquer instante nas configurações do aplicativo, sem qualquer prejuízo ao acesso gratuito aos jogos.
+                    </p>
+                  </section>
+                </div>
+
+                <div className="pt-3 border-t flex justify-end">
+                  <button 
+                    onClick={() => setShowPrivacyModal(false)}
+                    className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition"
+                  >
+                    Entendi e Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BANNER DE CONSENTIMENTO DE COOKIES E LGPD */}
+          {!lgpdConsent && (
+            <div className="fixed bottom-4 left-4 right-4 max-w-4xl mx-auto z-40">
+              <div className="bg-white/95 backdrop-blur-md border-2 border-indigo-200 shadow-2xl rounded-3xl p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-800">
+                <div className="space-y-1 text-center md:text-left">
+                  <h4 className="font-black text-base flex items-center justify-center md:justify-start gap-2">
+                    <span>🛡️</span> Sua Privacidade no Mundo Pop! &amp; Ploft!
+                  </h4>
+                  <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
+                    Respeitamos a <strong>LGPD</strong> e a segurança infantil. Não coletamos dados pessoais. Usamos armazenamento local para salvar sua rotina e histórico de evolução, além de cookies do <strong>Google AdSense</strong> para manter o site gratuito.{' '}
+                    <button 
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="underline font-bold text-indigo-600 hover:text-indigo-800"
+                    >
+                      Ler Política de Privacidade
+                    </button>.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleAcceptLgpd('essential')}
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 bg-slate-100 text-slate-700 font-bold text-xs md:text-sm hover:bg-slate-200 transition"
+                  >
+                    Apenas Essenciais
+                  </button>
+                  <button
+                    onClick={() => handleAcceptLgpd('accepted')}
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs md:text-sm hover:bg-indigo-700 shadow-md transition"
+                  >
+                    Aceitar e Continuar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <footer className="mt-12 text-center text-sm opacity-80 py-4 border-t border-slate-200/40 space-y-2">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold">
+              <button 
+                onClick={() => setShowPrivacyModal(true)}
+                className="underline hover:text-indigo-600 transition"
+              >
+                Política de Privacidade (LGPD)
+              </button>
+              <span>•</span>
+              <button 
+                onClick={() => setShowParentModal(true)}
+                className="underline hover:text-indigo-600 transition"
+              >
+                Gerenciar Cookies e Dados
+              </button>
+            </div>
             <p>&copy; <span id="year"></span> Larissa da Silva Anastácio. Todos os direitos reservados.</p>
           </footer>
         </div>
