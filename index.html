@@ -6,6 +6,10 @@
   <meta name="google-adsense-account" content="ca-pub-84121679402445496">
   <title>Mundo Pop! & Ploft!</title>
   
+  <!-- Ícone da Página (Favicon SVG Vetorial baseado na imagem enviada) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M60 12 C49 12 42 18 40 24 C30 22 20 29 20 40 C12 44 9 56 14 66 C9 76 13 88 22 92 C24 102 34 108 44 106 C48 112 56 114 60 112 C64 114 72 112 76 106 C86 108 96 102 98 92 C107 88 111 76 106 66 C111 56 108 44 100 40 C100 29 90 22 80 24 C78 18 71 12 60 12 Z' fill='%23FCC5B7' stroke='%230F172A' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M60 12 L60 22 M36 25 L41 32 M84 25 L79 32 M16 55 L25 57 M104 55 L95 57 M19 82 L27 78 M101 82 L93 78 M44 106 L48 97 M76 106 L72 97' stroke='%230F172A' stroke-width='4.5' stroke-linecap='round'/%3E%3Crect x='33' y='33' width='27' height='27' rx='4' fill='%23FDE068'/%3E%3Crect x='60' y='33' width='27' height='27' rx='4' fill='%23FB7185'/%3E%3Crect x='33' y='60' width='27' height='27' rx='4' fill='%2393E5FA'/%3E%3Crect x='60' y='60' width='27' height='27' rx='4' fill='%23B4F08C'/%3E%3Cpath d='M38 33 H82 A5 5 0 0 1 87 38 V82 A5 5 0 0 1 82 87 H38 A5 5 0 0 1 33 82 V38 A5 5 0 0 1 38 33 Z' fill='none' stroke='%230F172A' stroke-width='4.5' stroke-linejoin='round'/%3E%3Cpath d='M60 33 V41 C54 41 54 51 60 51 V60 M60 60 V68 C54 68 54 78 60 78 V87 M33 60 H42 C42 54 52 54 52 60 H60 M60 60 H69 C69 54 79 54 79 60 H87' fill='none' stroke='%230F172A' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%23FFFBEB'/%3E%3Cpath d='M60 12 C49 12 42 18 40 24 C30 22 20 29 20 40 C12 44 9 56 14 66 C9 76 13 88 22 92 C24 102 34 108 44 106 C48 112 56 114 60 112 C64 114 72 112 76 106 C86 108 96 102 98 92 C107 88 111 76 106 66 C111 56 108 44 100 40 C100 29 90 22 80 24 C78 18 71 12 60 12 Z' fill='%23FCC5B7' stroke='%230F172A' stroke-width='5' stroke-linejoin='round'/%3E%3Crect x='33' y='33' width='27' height='27' rx='4' fill='%23FDE068'/%3E%3Crect x='60' y='33' width='27' height='27' rx='4' fill='%23FB7185'/%3E%3Crect x='33' y='60' width='27' height='27' rx='4' fill='%2393E5FA'/%3E%3Crect x='60' y='60' width='27' height='27' rx='4' fill='%23B4F08C'/%3E%3Cpath d='M38 33 H82 A5 5 0 0 1 87 38 V82 A5 5 0 0 1 82 87 H38 A5 5 0 0 1 33 82 V38 A5 5 0 0 1 38 33 Z' fill='none' stroke='%230F172A' stroke-width='4.5' stroke-linejoin='round'/%3E%3Cpath d='M60 33 V41 C54 41 54 51 60 51 V60 M60 60 V68 C54 68 54 78 60 78 V87 M33 60 H42 C42 54 52 54 52 60 H60 M60 60 H69 C69 54 79 54 79 60 H87' fill='none' stroke='%230F172A' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+
   <!-- Domínio Oficial -->
   <link rel="canonical" href="https://mundo-pop-e-ploft.link" />
 
@@ -23,6 +27,50 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
+
+    // --- COMPONENTE SVG DO LOGOTIPO (CÉREBRO QUEBRA-CABEÇA) ---
+    function BrandBrainIcon({ className = "w-10 h-10" }) {
+      return (
+        <svg viewBox="0 0 120 120" className={className} aria-hidden="true">
+          {/* Contorno do Cérebro */}
+          <path
+            d="M60 12 C49 12 42 18 40 24 C30 22 20 29 20 40 C12 44 9 56 14 66 C9 76 13 88 22 92 C24 102 34 108 44 106 C48 112 56 114 60 112 C64 114 72 112 76 106 C86 108 96 102 98 92 C107 88 111 76 106 66 C111 56 108 44 100 40 C100 29 90 22 80 24 C78 18 71 12 60 12 Z"
+            fill="#FCC5B7"
+            stroke="#0F172A"
+            strokeWidth="5"
+            strokeLinejoin="round"
+          />
+          {/* Sulcos do Cérebro */}
+          <path
+            d="M60 12 L60 22 M36 25 L41 32 M84 25 L79 32 M16 55 L25 57 M104 55 L95 57 M19 82 L27 78 M101 82 L93 78 M44 106 L48 97 M76 106 L72 97"
+            stroke="#0F172A"
+            strokeWidth="4.5"
+            strokeLinecap="round"
+          />
+          {/* Peças Coloridas do Quebra-Cabeça */}
+          <rect x="33" y="33" width="27" height="27" rx="4" fill="#FDE068" />
+          <rect x="60" y="33" width="27" height="27" rx="4" fill="#FB7185" />
+          <rect x="33" y="60" width="27" height="27" rx="4" fill="#93E5FA" />
+          <rect x="60" y="60" width="27" height="27" rx="4" fill="#B4F08C" />
+          {/* Bordas Externas e Encaixes das Peças */}
+          <path
+            d="M38 33 H82 A5 5 0 0 1 87 38 V82 A5 5 0 0 1 82 87 H38 A5 5 0 0 1 33 82 V38 A5 5 0 0 1 38 33 Z"
+            fill="none"
+            stroke="#0F172A"
+            strokeWidth="4.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M60 33 V41 C54 41 54 51 60 51 V60 M60 60 V68 C54 68 54 78 60 78 V87 M33 60 H42 C42 54 52 54 52 60 H60 M60 60 H69 C69 54 79 54 79 60 H87"
+            fill="none"
+            stroke="#0F172A"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    }
 
     // --- SISTEMA DE ÁUDIO E VOZ NATIVA COM SELEÇÃO DE VOZ CLARA ---
     class SensoryAudio {
@@ -1055,9 +1103,13 @@
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setActiveModule('home')} 
-                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent hover:scale-105 transition-transform"
+                  className="flex items-center gap-2.5 group hover:scale-105 transition-transform"
+                  title="Voltar para o início"
                 >
-                  Mundo Pop! & Ploft!
+                  <BrandBrainIcon className="w-10 h-10 md:w-11 md:h-11 drop-shadow-sm group-hover:rotate-3 transition-transform" />
+                  <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                    Mundo Pop! & Ploft!
+                  </span>
                 </button>
                 <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">
                   Nível {supportLevel}
